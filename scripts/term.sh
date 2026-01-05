@@ -1,0 +1,1 @@
+docker ps | grep bun | awk '{print $1 " bash"}' | xargs -o docker exec -it

@@ -58,13 +58,17 @@ export async function createLogger(options: {
   logDir: string;
   pretty: boolean;
   level?: string;
+  /** Size before a new file starts. Tests shrink it to force rotation. */
+  maxSize?: string;
 }): Promise<AppLogger> {
   const level = options.level ?? 'info';
   const file = await pinoRoll({
     file: join(options.logDir, 'overly'),
     extension: '.log',
-    size: '10m',
-    limit: { count: 4 },
+    size: options.maxSize ?? '10m',
+    // 5 files in total. removeOtherLogFiles also prunes files from earlier runs: without it,
+    // pino-roll only removes files the current process created, so restarts pile them up.
+    limit: { count: 5, removeOtherLogFiles: true },
     mkdir: true,
     // Synchronous writes: nothing is lost if the process dies, and flush() is deterministic.
     sync: true,

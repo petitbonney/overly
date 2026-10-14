@@ -4,7 +4,7 @@
 //   crash       exits with 1 at once
 //   crash-once  crashes if the --marker file doesn't exist (and creates it), then acts as ready
 //   fatal       sends fatal and exits with 1
-//   fatal-after-exit  exits with 1 at once; a grandchild sharing stdout sends fatal 200 ms later
+//   fatal-after-exit  exits with 1; a grandchild sharing stdout sends fatal 100 ms after that
 //   hang        acts as ready, but ignores shutdown and stdin EOF
 //   silent      never writes anything and never exits
 import { spawn } from 'node:child_process';
@@ -42,12 +42,19 @@ if (mode === 'fatal-after-exit') {
     method: 'fatal',
     params: { code: 'port_in_use', message: 'Port 1234 is in use' },
   });
-  spawn(
+  // The grandchild shares stdout. It signals on its own stderr once it runs, so this process
+  // exits first; it writes the fatal line 100 ms later. Waiting for the signal keeps Node's
+  // cold start (slow on Windows CI) out of that gap.
+  const grandchild = spawn(
     process.execPath,
-    ['-e', 'setTimeout(() => process.stdout.write(process.argv[1] + "\\n"), 200)', line],
-    { stdio: ['ignore', 'inherit', 'inherit'] },
+    [
+      '-e',
+      'process.stderr.write("up"); setTimeout(() => process.stdout.write(process.argv[1] + "\\n"), 100)',
+      line,
+    ],
+    { stdio: ['ignore', 'inherit', 'pipe'] },
   );
-  process.exit(1);
+  grandchild.stderr.once('data', () => process.exit(1));
 } else if (mode === 'fatal') {
   send({ method: 'fatal', params: { code: 'port_in_use', message: 'Port 1234 is in use' } }, () =>
     process.exit(1),

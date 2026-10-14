@@ -133,7 +133,7 @@ Everything runs locally: no cloud account, no third-party server between your ch
 | Tests | Vitest, Playwright, Twitch CLI mock EventSub server |
 | Packaging | Tauri bundler: NSIS installer for Windows; GitHub Actions CI |
 
-## Repository layout (planned)
+## Repository layout
 
 ```
 overly/
@@ -151,8 +151,6 @@ overly/
 
 ## Development
 
-> Not set up yet. This is how it is meant to work once [Phase 0](ROADMAP.md#phase-0--foundations) is done.
-
 Prerequisites: [Bun](https://bun.sh) (package manager and scripts), Node.js LTS (the server runtime), and the Rust stable toolchain (only needed for the Tauri shell).
 
 ```bash
@@ -160,10 +158,12 @@ bun install
 ```
 
 ```bash
-bun run dev
+bun run lint && bun run typecheck && bun run test
 ```
 
-`bun run dev` starts the Node server and the dashboard with hot reload, without the Tauri shell, so you can work on almost everything from any OS without Rust. To run the full desktop app with the tray icon:
+See [AGENTS.md](AGENTS.md#commands) for every command.
+
+> Coming in [Phase 1](ROADMAP.md#phase-1--walking-skeleton-tray--sidecar--dashboard): `bun run dev` starts the Node server and the dashboard with hot reload, without the Tauri shell, so you can work on almost everything from any OS without Rust. To run the full desktop app with the tray icon:
 
 ```bash
 bun run dev:desktop
@@ -173,7 +173,7 @@ bun run dev:desktop
 
 ## Contributing
 
-Overly is built by humans steering AI coding agents. The repository will include agent instructions (`AGENTS.md` / `CLAUDE.md`) so that any agent produces consistent work. Whether you write code by hand or with an agent:
+Overly is built by humans steering AI coding agents. The repository includes agent instructions ([AGENTS.md](AGENTS.md), imported by `CLAUDE.md`) so that any agent produces consistent work. See [CONTRIBUTING.md](CONTRIBUTING.md). Whether you write code by hand or with an agent:
 
 - open an issue before starting large changes,
 - keep PRs focused, with tests,

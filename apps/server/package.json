@@ -1,0 +1,14 @@
+{
+  "name": "@overly/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Overly Node sidecar: HTTP/WS server, platforms, pipeline engine, plugin host, storage.",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@overly/shared": "workspace:*"
+  }
+}

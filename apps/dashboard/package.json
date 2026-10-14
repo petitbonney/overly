@@ -1,0 +1,14 @@
+{
+  "name": "@overly/dashboard",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Overly dashboard (React SPA).",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@overly/shared": "workspace:*"
+  }
+}

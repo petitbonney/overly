@@ -1,0 +1,5 @@
+bun.lock
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
+# Prose docs keep their hand-written layout (Prettier pads long tables).
+*.md

@@ -1,0 +1,26 @@
+name: Feature request
+description: Suggest a widget, node, or improvement.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What do you want to do on stream?
+      description: Describe the problem or use case, not only the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How could Overly help? A widget, a pipeline node, a setting…
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and workarounds
+  - type: checkboxes
+    id: roadmap
+    attributes:
+      label: Roadmap
+      options:
+        - label: I checked ROADMAP.md and this isn't already planned.

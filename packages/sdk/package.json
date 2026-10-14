@@ -1,0 +1,14 @@
+{
+  "name": "@overly/sdk",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Overly SDK: overlay side and node/widget backend side.",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@overly/shared": "workspace:*"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "@overly/desktop",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Overly desktop shell (Tauri v2, Rust): tray, sidecar lifecycle, keychain, input.",
+  "license": "MIT",
+  "scripts": {
+    "check": "cargo check --manifest-path src-tauri/Cargo.toml",
+    "test": "cargo test --manifest-path src-tauri/Cargo.toml"
+  }
+}

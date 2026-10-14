@@ -32,6 +32,8 @@ jobs:
       - run: bun run lint
       - run: bun run typecheck
       - run: bun run test
+      - run: bun run build
+      - run: bun run test:sidecar
 
   desktop:
     name: Desktop shell (${{ matrix.os }})

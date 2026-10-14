@@ -15,12 +15,14 @@
     "plugins/*"
   ],
   "scripts": {
+    "build": "bun run --filter @overly/dashboard build && bun run --filter @overly/server build",
     "lint": "eslint . --max-warnings 0 && prettier --check .",
     "format": "prettier --write .",
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check:desktop": "cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml"
+    "check:desktop": "cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml",
+    "test:sidecar": "OVERLY_SIDECAR_ENTRY=apps/server/dist/sidecar/server.mjs vitest run --project @overly/server main.process"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

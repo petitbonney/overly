@@ -2018,6 +2018,8 @@ checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 name = "overly-desktop"
 version = "0.0.0"
 dependencies = [
+ "serde",
+ "serde_json",
  "tauri",
  "tauri-build",
 ]

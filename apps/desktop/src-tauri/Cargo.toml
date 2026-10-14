@@ -8,8 +8,14 @@ edition = "2024"
 rust-version = "1.85"
 publish = false
 
+[lib]
+name = "overly_desktop_lib"
+path = "src/lib.rs"
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 tauri = { version = "2", features = [] }

@@ -32,8 +32,10 @@ export function SessionGate({
       </Center>
     );
   }
-  if (session.isError) {
-    if (isNoSession(session.error)) return <NoSessionPage />;
+  if (session.isError && isNoSession(session.error)) return <NoSessionPage />;
+  // A failed background check (the server is restarting) keeps the dashboard: the connection
+  // badge shows "Reconnecting…". The error screen is only for a first check that never succeeded.
+  if (session.data === undefined) {
     return (
       <Stack align="center" justify="center" mih="100vh" gap="sm">
         <Text>Can&apos;t reach the Overly server.</Text>

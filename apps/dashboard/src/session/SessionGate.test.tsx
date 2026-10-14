@@ -1,4 +1,5 @@
-import { screen, waitFor } from '@testing-library/react';
+import { focusManager } from '@tanstack/react-query';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -56,5 +57,48 @@ describe('SessionGate', () => {
     await waitFor(() => {
       expect(fetchMock.mock.calls.length).toBeGreaterThan(calls);
     });
+  });
+
+  it('keeps the dashboard when a background check fails', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json(200, { authenticated: true }));
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithProviders(
+      <SessionGate retryDelayMs={0}>
+        <p>dashboard</p>
+      </SessionGate>,
+    );
+    expect(await screen.findByText('dashboard')).toBeInTheDocument();
+
+    // The server restarts; refocusing the window checks the session again and fails.
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+    const calls = fetchMock.mock.calls.length;
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(calls + 3);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(screen.getByText('dashboard')).toBeInTheDocument();
+    expect(screen.queryByText("Can't reach the Overly server.")).not.toBeInTheDocument();
+  });
+
+  it('shows the no-session screen when the session ends', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json(200, { authenticated: true }));
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithProviders(
+      <SessionGate retryDelayMs={0}>
+        <p>dashboard</p>
+      </SessionGate>,
+    );
+    expect(await screen.findByText('dashboard')).toBeInTheDocument();
+
+    fetchMock.mockResolvedValue(json(401, { error: 'no_session' }));
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    expect(await screen.findByRole('heading', { name: 'No active session' })).toBeInTheDocument();
   });
 });

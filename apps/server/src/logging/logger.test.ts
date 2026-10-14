@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, readdir, readFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -30,6 +30,21 @@ describe('createLogger', () => {
       (await readFile(join(logDir, String(files[0])), 'utf8')).trim(),
     );
     expect(line).toMatchObject({ msg: 'x', hello: 1, level: 30 });
+  });
+
+  it('keeps at most 5 log files, including files left by earlier runs', async () => {
+    const logDir = join(await mkdtemp(join(tmpdir(), 'overly-log-')), 'logs');
+    await mkdir(logDir);
+    // Earlier runs (app restarts, crash restarts) left 8 files behind.
+    for (let n = 1; n <= 8; n++) await writeFile(join(logDir, `overly.${String(n)}.log`), 'old\n');
+
+    const { logger, flush } = await createLogger({ logDir, pretty: false, maxSize: '1k' });
+    for (let i = 0; i < 40; i++) logger.info({ filler: 'x'.repeat(100) }, 'line');
+    await flush();
+
+    await expect
+      .poll(async () => (await readdir(logDir)).filter((f) => /^overly\.\d+\.log$/.test(f)).length)
+      .toBeLessThanOrEqual(5);
   });
 
   it('never writes to stdout, even with pretty logs', async () => {

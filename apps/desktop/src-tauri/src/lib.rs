@@ -1,9 +1,11 @@
 //! The Overly desktop shell: a tray icon that runs the Node sidecar (ADR 0001).
 
 pub mod backoff;
+mod job;
 pub mod locate;
 pub mod protocol;
 pub mod status;
+pub mod supervisor;
 
 /// The app context built from `tauri.conf.json`. The macro can only be expanded once per binary.
 fn context() -> tauri::Context<tauri::Wry> {

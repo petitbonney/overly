@@ -23,6 +23,12 @@ export default defineConfig(
     },
   },
   {
+    // In the server, stdout carries JSON-RPC to the shell: log with pino, never console.
+    files: ['apps/server/src/**/*.ts'],
+    ignores: ['**/*.test.ts'],
+    rules: { 'no-console': 'error' },
+  },
+  {
     files: ['**/*.js'],
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: { globals: globals.node },

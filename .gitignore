@@ -4,6 +4,9 @@ dist/
 coverage/
 .vite/
 
+# Data folder of `bun run dev`
+.dev-data/
+
 # Rust / Tauri
 apps/desktop/src-tauri/target/
 apps/desktop/src-tauri/gen/

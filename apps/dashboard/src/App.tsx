@@ -3,9 +3,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type ReactNode, useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router';
 
+import { ServerConnectionProvider } from './connection/ServerConnection.js';
 import { AppLayout } from './layout/AppLayout.js';
 import { HomePage } from './pages/HomePage.js';
 import { NotFoundPage } from './pages/NotFoundPage.js';
+import { SessionGate } from './session/SessionGate.js';
 import { theme } from './theme.js';
 
 // The light/dark choice is a per-browser preference, so local storage is the right place for it.
@@ -39,7 +41,12 @@ export function App() {
   return (
     <AppProviders>
       <BrowserRouter>
-        <AppRoutes />
+        <SessionGate>
+          {/* The WebSocket needs the session cookie, so it connects inside the gate. */}
+          <ServerConnectionProvider>
+            <AppRoutes />
+          </ServerConnectionProvider>
+        </SessionGate>
       </BrowserRouter>
     </AppProviders>
   );

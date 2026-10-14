@@ -9,6 +9,13 @@ updates:
         dependency-type: development
         update-types: [minor, patch]
     open-pull-requests-limit: 10
+    ignore:
+      # typescript-eslint does not support TS 7 yet (typescript-eslint#10940).
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      # Keep in step with .node-version; bump both together.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: cargo
     directory: /apps/desktop/src-tauri

@@ -163,7 +163,15 @@ bun run lint && bun run typecheck && bun run test
 
 See [AGENTS.md](AGENTS.md#commands) for every command.
 
-> Coming in [Phase 1](ROADMAP.md#phase-1--walking-skeleton-tray--sidecar--dashboard): `bun run dev` starts the Node server and the dashboard with hot reload, without the Tauri shell, so you can work on almost everything from any OS without Rust. To run the full desktop app with the tray icon:
+To work on the server and the dashboard with hot reload, without the Tauri shell (no Rust needed):
+
+```bash
+bun run dev
+```
+
+Then open the dashboard URL it prints (`http://localhost:5173/?t=…`). Development data goes to `.dev-data/`, and the server uses port 6860, so it doesn't touch an installed Overly.
+
+To run the full desktop app with the tray icon (needs Rust):
 
 ```bash
 bun run dev:desktop

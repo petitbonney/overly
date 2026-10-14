@@ -55,10 +55,14 @@ Run everything from the repository root.
 | Command | What it does |
 |---|---|
 | `bun install` | Install dependencies (`--frozen-lockfile` in CI) |
+| `bun run dev` | Server (port 6860, data in `.dev-data/`) and the dashboard with hot reload, without the shell. Open the URL it prints. |
+| `bun run dev:desktop` | `bun run build`, then the Tauri shell with its tray (needs Rust) |
+| `bun run build` | Dashboard build, then the sidecar bundle `apps/server/dist/sidecar/server.mjs` (with the dashboard next to it) |
 | `bun run lint` | ESLint (type-aware) and Prettier check |
 | `bun run format` | Format with Prettier |
 | `bun run typecheck` | `tsc -b` across all project references |
 | `bun run test` | Vitest, all workspaces, under Node |
+| `bun run test:sidecar` | The sidecar process test against the built bundle (run `bun run build` first) |
 | `bun run check:desktop` | `cargo check` for the Tauri shell (needs Rust) |
 
 Use **`bun run test`, never `bun test`**: `bun test` starts Bun's own test runner, which is not what CI runs. Run a single workspace's tests with `bun run test --project @overly/shared`.
@@ -73,7 +77,9 @@ Use **`bun run test`, never `bun test`**: `bun test` starts Bun's own test runne
 - **Dependencies:** add them to the workspace that uses them, not to the root (the root only holds shared tooling). Licenses must be MIT-compatible (ADR 0009). Pin exact versions.
 - **Formatting:** Prettier for code, JSON and YAML; Markdown is not auto-formatted. Rust uses `cargo fmt`.
 - **Decisions:** a change that contradicts an ADR needs a new ADR that supersedes it (see `docs/adr/README.md`).
-- **Security:** keep the localhost model (ADR 0007): bind to 127.0.0.1, check Host and Origin. Don't weaken it to make something work.
+- **Security:** keep the localhost model (ADR 0007, ADR 0012): bind to 127.0.0.1, check Host and Origin, require the session cookie. Don't weaken it to make something work.
+- **stdout belongs to JSON-RPC in the server.** When the shell runs the sidecar, stdout carries the protocol in [docs/sidecar-protocol.md](docs/sidecar-protocol.md). Log with the pino logger, never `console` (ESLint enforces it in `apps/server/src`).
+- **Development data** lives in `.dev-data/` at the repository root (git-ignored). Delete it to start fresh.
 - **Commits:** small and focused, imperative subject line. Use a branch and a pull request, never push to `master`.
 
 ## Never commit secrets

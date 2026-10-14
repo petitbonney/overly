@@ -49,30 +49,30 @@ This roadmap is split into phases. Each phase ends with something you can run an
 **Goal:** the desktop app starts, shows a tray icon, starts the Node server, and opens an empty dashboard in the browser. Quit stops everything cleanly.
 
 ### Server (`apps/server`)
-- [ ] Fastify app: `/api/health`, static serving of the dashboard build, and a WebSocket endpoint `/ws`
-- [ ] Config loader: app-data directory per OS, `settings.json` with schema version, atomic writes
-- [ ] Port: fixed default (configurable), because OBS URLs must stay stable. If the port is busy, report a clear error to the shell.
-- [ ] stdio JSON-RPC channel to the shell: `ready {port}`, `shutdown`, `getDashboardUrl`
-- [ ] Graceful shutdown: close WebSockets, stop pipeline runs and flush writes, within a time limit
-- [ ] Structured logging (pino) to a rotating file in app data
+- [x] Fastify app: `/api/health`, static serving of the dashboard build, and a WebSocket endpoint `/ws`
+- [x] Config loader: app-data directory per OS, `settings.json` with schema version, atomic writes
+- [x] Port: fixed default (configurable), because OBS URLs must stay stable. If the port is busy, report a clear error to the shell.
+- [x] stdio JSON-RPC channel to the shell: `ready {port}`, `shutdown`, `getDashboardUrl`
+- [x] Graceful shutdown: close WebSockets, stop pipeline runs and flush writes, within a time limit
+- [x] Structured logging (pino) to a rotating file in app data
 
 ### Localhost security
-- [ ] Bind `127.0.0.1` only
-- [ ] `Host` header allowlist (`127.0.0.1:<port>`, `localhost:<port>`), to block DNS rebinding
-- [ ] Dashboard session: the tray opens `/?t=<one-time token>`, which the server exchanges for an HttpOnly, SameSite=Strict cookie
-- [ ] `Origin` check on every state-changing request and on the WebSocket upgrade
+- [x] Bind `127.0.0.1` only
+- [x] `Host` header allowlist (`127.0.0.1:<port>`, `localhost:<port>`), to block DNS rebinding
+- [x] Dashboard session: the tray opens `/?t=<one-time token>`, which the server exchanges for an HttpOnly, SameSite=Strict cookie
+- [x] `Origin` check on every state-changing request and on the WebSocket upgrade
 
 ### Desktop shell (`apps/desktop`)
-- [ ] Tauri v2 app with no windows
-- [ ] Tray icon with **Dashboard** and **Quit**. The tooltip shows the status (starting / running / error).
-- [ ] Spawn the sidecar (bundled `node` binary plus `server.mjs`), wait for `ready`, and restart it with backoff if it crashes
-- [ ] Single-instance lock: launching a second time opens the dashboard
-- [ ] **Quit**: send `shutdown`, wait, kill the sidecar after a timeout, then exit
+- [x] Tauri v2 app with no windows
+- [x] Tray icon with **Dashboard** and **Quit**. The tooltip shows the status (starting / running / error).
+- [x] Spawn the sidecar (bundled `node` binary plus `server.mjs`), wait for `ready`, and restart it with backoff if it crashes
+- [x] Single-instance lock: launching a second time opens the dashboard
+- [x] **Quit**: send `shutdown`, wait, kill the sidecar after a timeout, then exit
 
 ### Dashboard (`apps/dashboard`)
-- [ ] Vite + React + TypeScript + router + TanStack Query
-- [ ] App layout: left pane with empty **Widgets** and **Pipelines** sections (each with `+`), main pane (empty state), header (connection status placeholder)
-- [ ] Light and dark theme
+- [x] Vite + React + TypeScript + router + TanStack Query
+- [x] App layout: left pane with empty **Widgets** and **Pipelines** sections (each with `+`), main pane (empty state), header (connection status placeholder)
+- [x] Light and dark theme
 
 **Exit criteria:** on Windows, `bun run dev:desktop` shows the tray. *Dashboard* opens the browser to a working dashboard. *Quit* leaves no orphan `node` process. A request from another origin is rejected.
 
@@ -289,6 +289,7 @@ This roadmap is split into phases. Each phase ends with something you can run an
 **Goal:** a non-technical streamer can install and update Overly safely.
 
 - [ ] Tauri bundler: **NSIS installer** (per-user install, no admin), with the WebView2 bootstrapper as Tauri requires
+- [ ] Bundle the sidecar: the Node LTS binary as a Tauri `externalBin` (found next to the shell executable), and `server.mjs` with the dashboard build as resources (`<resources>/server/`). Phase 1 already looks for them there and falls back to the repository in debug builds.
 - [ ] **Code signing** for Windows (evaluate SignPath Foundation for OSS, or Azure Trusted Signing), to avoid SmartScreen warnings
 - [ ] **Auto-update** with the Tauri updater plugin: signed update manifests on GitHub Releases, an update-available notice in the dashboard, and update on quit or on demand
 - [ ] **Autostart** with Windows (setting, off by default) through the Tauri autostart plugin

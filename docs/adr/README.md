@@ -14,5 +14,7 @@ Each file records one decision: the context, what was decided, and what follows 
 | [0008](0008-twitch-device-code-flow.md) | Twitch sign-in with a shipped Client ID and the Device Code Flow | Accepted |
 | [0009](0009-mit-license-and-ai-written-code.md) | MIT license; code written by AI agents, reviewed by humans | Accepted |
 | [0010](0010-bun-tooling-node-runtime.md) | Bun for tooling, Node.js LTS as the shipped runtime | Accepted |
+| [0011](0011-dashboard-stack.md) | Dashboard stack: React Router, TanStack Query and Mantine | Accepted |
+| [0012](0012-local-server-port-and-sessions.md) | Fixed default port 6859 and signed dashboard sessions | Accepted |
 
 New ADRs copy [template.md](template.md) and take the next number.

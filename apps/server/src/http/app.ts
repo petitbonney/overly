@@ -5,6 +5,7 @@ import type pino from 'pino';
 import { createAllowlist } from '../security/allowlist.js';
 import { registerGuard } from '../security/guard.js';
 import type { OneTimeTokens } from '../security/tokens.js';
+import { registerDashboard } from './dashboard.js';
 import { registerApiRoutes, registerSessionExchange } from './routes.js';
 
 export interface AppDeps {
@@ -30,6 +31,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   registerGuard(app, { allowlist: createAllowlist(deps.getPort, deps.devOrigins), now });
   registerSessionExchange(app, { tokens: deps.tokens, now });
   registerApiRoutes(app, { version: deps.version });
+  await registerDashboard(app, { dashboardDir: deps.dashboardDir });
 
   return app;
 }

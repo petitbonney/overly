@@ -42,7 +42,9 @@ if (mode === 'fatal-after-exit') {
   const grandchild = spawn(
     process.execPath,
     [fileURLToPath(new URL('./late-fatal.mjs', import.meta.url))],
-    { stdio: ['ignore', 'inherit', 'pipe'] },
+    // detached: on Windows, Node (libuv) puts child processes in a job that kills them when this
+    // process exits, which would kill the grandchild before it writes.
+    { stdio: ['ignore', 'inherit', 'pipe'], detached: true },
   );
   grandchild.stderr.once('data', (chunk) => {
     const text = String(chunk);

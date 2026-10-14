@@ -52,6 +52,10 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev
+      # The supervisor tests run a fake sidecar with Node.
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy

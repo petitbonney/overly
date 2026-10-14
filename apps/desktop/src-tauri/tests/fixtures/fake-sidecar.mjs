@@ -4,11 +4,12 @@
 //   crash       exits with 1 at once
 //   crash-once  crashes if the --marker file doesn't exist (and creates it), then acts as ready
 //   fatal       sends fatal and exits with 1
-//   fatal-after-exit  exits with 1; a grandchild sharing stdout sends fatal 100 ms after that
+//   fatal-after-exit  exits with 1; a grandchild sharing stdout (late-fatal.mjs) sends fatal 100 ms later
 //   hang        acts as ready, but ignores shutdown and stdin EOF
 //   silent      never writes anything and never exits
 import { spawn } from 'node:child_process';
 import { existsSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { createInterface } from 'node:readline';
 
 function option(name) {
@@ -36,25 +37,19 @@ if (mode === 'crash-once') {
 if (mode === 'crash') process.exit(1);
 
 if (mode === 'fatal-after-exit') {
-  // Reproduces the race where the shell sees the exit before the last stdout lines.
-  const line = JSON.stringify({
-    jsonrpc: '2.0',
-    method: 'fatal',
-    params: { code: 'port_in_use', message: 'Port 1234 is in use' },
-  });
-  // The grandchild shares stdout. It signals on its own stderr once it runs, so this process
-  // exits first; it writes the fatal line 100 ms later. Waiting for the signal keeps Node's
-  // cold start (slow on Windows CI) out of that gap.
+  // Reproduces the race where the shell sees the exit before the last stdout lines: a grandchild
+  // sharing stdout (late-fatal.mjs) sends `fatal` 100 ms after this process exits.
   const grandchild = spawn(
     process.execPath,
-    [
-      '-e',
-      'process.stderr.write("up"); setTimeout(() => process.stdout.write(process.argv[1] + "\\n"), 100)',
-      line,
-    ],
+    [fileURLToPath(new URL('./late-fatal.mjs', import.meta.url))],
     { stdio: ['ignore', 'inherit', 'pipe'] },
   );
-  grandchild.stderr.once('data', () => process.exit(1));
+  grandchild.stderr.once('data', (chunk) => {
+    const text = String(chunk);
+    if (text === 'up') process.exit(1);
+    // Anything else is an error from the grandchild: pass it on for the test's diagnostics.
+    process.stderr.write(`late-fatal.mjs failed: ${text}\n`, () => process.exit(1));
+  });
 } else if (mode === 'fatal') {
   send({ method: 'fatal', params: { code: 'port_in_use', message: 'Port 1234 is in use' } }, () =>
     process.exit(1),

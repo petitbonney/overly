@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import prettier from 'eslint-config-prettier';
 import { defineConfig, globalIgnores } from 'eslint/config';
+import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
@@ -13,7 +14,12 @@ export default defineConfig(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['*.js', '*.config.ts'],
+          allowDefaultProject: [
+            '*.js',
+            '*.config.ts',
+            'apps/dashboard/vite.config.ts',
+            'apps/dashboard/vitest.config.ts',
+          ],
         },
         tsconfigRootDir: import.meta.dirname,
       },
@@ -21,6 +27,10 @@ export default defineConfig(
     rules: {
       '@typescript-eslint/consistent-type-imports': 'error',
     },
+  },
+  {
+    files: ['apps/dashboard/**/*.{ts,tsx}'],
+    extends: [reactHooks.configs.flat.recommended],
   },
   {
     // In the server, stdout carries JSON-RPC to the shell: log with pino, never console.

@@ -4,8 +4,10 @@
 //   crash       exits with 1 at once
 //   crash-once  crashes if the --marker file doesn't exist (and creates it), then acts as ready
 //   fatal       sends fatal and exits with 1
+//   fatal-after-exit  exits with 1 at once; a grandchild sharing stdout sends fatal 200 ms later
 //   hang        acts as ready, but ignores shutdown and stdin EOF
 //   silent      never writes anything and never exits
+import { spawn } from 'node:child_process';
 import { existsSync, writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 
@@ -33,7 +35,20 @@ if (mode === 'crash-once') {
 
 if (mode === 'crash') process.exit(1);
 
-if (mode === 'fatal') {
+if (mode === 'fatal-after-exit') {
+  // Reproduces the race where the shell sees the exit before the last stdout lines.
+  const line = JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'fatal',
+    params: { code: 'port_in_use', message: 'Port 1234 is in use' },
+  });
+  spawn(
+    process.execPath,
+    ['-e', 'setTimeout(() => process.stdout.write(process.argv[1] + "\\n"), 200)', line],
+    { stdio: ['ignore', 'inherit', 'inherit'] },
+  );
+  process.exit(1);
+} else if (mode === 'fatal') {
   send({ method: 'fatal', params: { code: 'port_in_use', message: 'Port 1234 is in use' } }, () =>
     process.exit(1),
   );

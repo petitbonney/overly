@@ -67,15 +67,48 @@ async fn restarts_after_a_crash_with_backoff() {
     assert_eq!(handle.status().borrow().clone(), Status::Stopped);
 }
 
-#[tokio::test(flavor = "multi_thread")]
-async fn does_not_restart_after_fatal() {
-    let handle = SupervisorHandle::spawn(config("fatal"));
+/// Every status the handle goes through, until the supervisor stops.
+fn record(handle: &SupervisorHandle) -> std::sync::Arc<std::sync::Mutex<Vec<Status>>> {
+    let seen = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    let mut status = handle.status();
+    let log = seen.clone();
+    tokio::spawn(async move {
+        loop {
+            log.lock().unwrap().push(status.borrow_and_update().clone());
+            if status.changed().await.is_err() {
+                break;
+            }
+        }
+    });
+    seen
+}
+
+async fn assert_fatal_without_restart(mode: &str) {
+    let handle = SupervisorHandle::spawn(config(mode));
+    let seen = record(&handle);
     let fatal = Status::Fatal {
         message: "Port 1234 is in use".into(),
     };
     wait_for(&handle, |status| *status == fatal).await;
     tokio::time::sleep(Duration::from_millis(300)).await;
     assert_eq!(handle.status().borrow().clone(), fatal);
+    let seen = seen.lock().unwrap().clone();
+    assert!(
+        !seen
+            .iter()
+            .any(|status| matches!(status, Status::Restarting { .. })),
+        "{seen:?}"
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn does_not_restart_after_fatal() {
+    assert_fatal_without_restart("fatal").await;
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn reads_a_fatal_message_that_arrives_after_the_exit() {
+    assert_fatal_without_restart("fatal-after-exit").await;
 }
 
 #[tokio::test(flavor = "multi_thread")]
@@ -117,6 +150,8 @@ async fn dashboard_url_waits_for_restart() {
 #[tokio::test(flavor = "multi_thread")]
 async fn dashboard_url_fails_fast_when_fatal() {
     let handle = SupervisorHandle::spawn(config("fatal"));
+    // Only time the call itself: Node's cold start can be slow on CI.
+    wait_for(&handle, |status| matches!(status, Status::Fatal { .. })).await;
     let started = Instant::now();
     let result = handle.dashboard_url().await;
     assert_eq!(

@@ -21,6 +21,9 @@ use crate::protocol::{
 };
 use crate::status::Status;
 
+/// How long to keep reading a sidecar's stdout after it exited, for a `fatal` line still in flight.
+const EXIT_DRAIN: Duration = Duration::from_millis(500);
+
 /// Windows: don't open a console window for the sidecar.
 #[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
@@ -265,6 +268,13 @@ async fn idle_until_shutdown(
     }
 }
 
+fn fatal_message(params: Value) -> String {
+    match serde_json::from_value::<FatalParams>(params) {
+        Ok(params) => params.message,
+        Err(error) => format!("The server sent an invalid fatal message: {error}"),
+    }
+}
+
 struct Sidecar {
     child: Child,
     stdin: ChildStdin,
@@ -362,6 +372,20 @@ impl Sidecar {
                         Ok(code) => log::info!("The Overly server exited ({code})"),
                         Err(error) => log::warn!("Can't wait for the Overly server: {error}"),
                     }
+                    // The exit can be seen before the last stdout lines: read them until EOF, so
+                    // a `fatal` sent just before exiting isn't mistaken for a crash.
+                    if messages_open {
+                        let drain = async {
+                            while let Some(message) = self.messages.recv().await {
+                                if let Incoming::Notification { method, params } = message {
+                                    if method == protocol::FATAL {
+                                        fatal = Some(fatal_message(params));
+                                    }
+                                }
+                            }
+                        };
+                        let _ = timeout(EXIT_DRAIN, drain).await;
+                    }
                     // Dropping `pending` fails the requests still waiting for an answer.
                     return if stopping {
                         Outcome::Stopped
@@ -387,10 +411,7 @@ impl Sidecar {
                         }
                     }
                     Some(Incoming::Notification { method, params }) if method == protocol::FATAL => {
-                        fatal = Some(match serde_json::from_value::<FatalParams>(params) {
-                            Ok(params) => params.message,
-                            Err(error) => format!("The server sent an invalid fatal message: {error}"),
-                        });
+                        fatal = Some(fatal_message(params));
                     }
                     Some(Incoming::Notification { method, .. }) => {
                         log::debug!("Ignored sidecar notification {method}");

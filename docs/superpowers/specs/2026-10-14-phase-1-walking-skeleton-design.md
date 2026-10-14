@@ -81,7 +81,7 @@ Without `--rpc` (standalone dev), the server prints the dashboard URL, with a on
 
 ### Logging
 
-- pino, through a pino-roll stream (not a worker transport, so it bundles): `<data>/logs/overly.log`, 10 MB per file, 5 files kept.
+- pino, through a pino-roll stream (not a worker transport, so it bundles): `<data>/logs/overly.<n>.log` (pino-roll numbers the files), 10 MB per file, 5 files kept.
 - `--pretty-logs` adds a pino-pretty stream on stderr. pino-pretty is loaded with a dynamic import and kept out of the bundle.
 - Redaction: `cookie` and `set-cookie` headers, and the `t` query parameter in logged URLs.
 - Nothing writes to stdout. ESLint `no-console` is an error in `apps/server/src` (tests excepted).
@@ -173,7 +173,7 @@ Both sides implement a two-way peer (requests with ids, responses, notifications
 - **Session gate:** a query on `/api/session`. A `401` renders only the "No active session — open the dashboard from the Overly tray icon" screen.
 - **Server connection:** a hook connects to the same-origin `/ws`, validates messages with the shared Zod schemas, and reconnects with backoff from 0.5 s to 10 s. Its state drives the header indicator.
 - **API client:** a thin same-origin `fetch` wrapper that throws a typed `ApiError` with the status code.
-- **Build:** `vite build` writes to `apps/dashboard/dist/web` (tsc keeps its declarations in `dist/`).
+- **Build:** `vite build` writes to `apps/dashboard/dist/web` (tsc keeps its declarations in `dist/`). Bundled files go to `static/` instead of Vite's default `assets/`, because `/assets/` is reserved for the Phase 2 asset library.
 - **Dev proxy:** `/api`, `/ws` (WebSocket) and `^/\?t=` go to `http://127.0.0.1:6860` with `changeOrigin` (rewrites Host, not Origin).
 
 ## 5. Tooling, CI and docs

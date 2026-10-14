@@ -1,12 +1,39 @@
 //! Runs the supervisor against a fake sidecar (tests/fixtures/fake-sidecar.mjs). Needs `node` on PATH.
 
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use overly_desktop_lib::status::Status;
 use overly_desktop_lib::supervisor::{SupervisorConfig, SupervisorError, SupervisorHandle};
 
+/// The supervisor's and sidecar's log lines, printed when a test times out (they come from tokio
+/// workers, whose output the test harness wouldn't show).
+static LOGS: Mutex<Vec<String>> = Mutex::new(Vec::new());
+
+struct RecordingLogger;
+
+impl log::Log for RecordingLogger {
+    fn enabled(&self, _: &log::Metadata) -> bool {
+        true
+    }
+
+    fn log(&self, record: &log::Record) {
+        let line = format!("[{}] {}", record.target(), record.args());
+        LOGS.lock().unwrap().push(line);
+    }
+
+    fn flush(&self) {}
+}
+
+fn record_logs() {
+    if log::set_logger(&RecordingLogger).is_ok() {
+        log::set_max_level(log::LevelFilter::Info);
+    }
+}
+
 fn config(mode: &str) -> SupervisorConfig {
+    record_logs();
     let fixture = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/fake-sidecar.mjs");
     let mut config = SupervisorConfig::new(PathBuf::from("node"), fixture);
     config.args = vec![format!("--mode={mode}")];
@@ -38,7 +65,13 @@ async fn wait_for(handle: &SupervisorHandle, wanted: impl Fn(&Status) -> bool) -
         }
     })
     .await
-    .expect("timed out waiting for a status")
+    .unwrap_or_else(|_| {
+        panic!(
+            "timed out waiting for a status; current: {:?}\nlogs (all tests):\n{}",
+            handle.status().borrow().clone(),
+            LOGS.lock().unwrap().join("\n")
+        )
+    })
 }
 
 #[tokio::test(flavor = "multi_thread")]

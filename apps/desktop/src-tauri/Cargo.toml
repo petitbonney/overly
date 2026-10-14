@@ -1,0 +1,15 @@
+[package]
+name = "overly-desktop"
+version = "0.0.0"
+description = "Overly desktop shell: tray icon and Node sidecar lifecycle"
+license = "MIT"
+repository = "https://github.com/petitbonney/overly"
+edition = "2024"
+rust-version = "1.85"
+publish = false
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }

@@ -30,15 +30,15 @@ This roadmap is split into phases. Each phase ends with something you can run an
 
 **Goal:** a repository that any contributor (human or agent) can clone, build, lint and test, with conventions written down.
 
-- [ ] Monorepo with **Bun workspaces**: `apps/{desktop,server,dashboard}`, `packages/{shared,sdk,create-plugin}`, `plugins/`. Pin the Bun version (`packageManager` field) and commit `bun.lock`.
-- [ ] TypeScript project references, a strict `tsconfig` base, ESLint and Prettier
-- [ ] Vitest workspace config. A placeholder test in each package.
-- [ ] `AGENTS.md` and `CLAUDE.md`: architecture summary, glossary (widget, pipeline, node, run, plugin), conventions, commands, the definition of done, and "never commit secrets"
-- [ ] `LICENSE` (MIT), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, issue and PR templates
-- [ ] `docs/adr/` containing the 10 decisions above
-- [ ] GitHub Actions (`oven-sh/setup-bun` and `actions/setup-node`): lint, typecheck and test on `ubuntu-latest` and `windows-latest`. `cargo check` for the shell.
-- [ ] Renovate or Dependabot configuration
-- [ ] Register the Overly Twitch application (public client type, Device Code Flow enabled) and record its Client ID in the config
+- [x] Monorepo with **Bun workspaces**: `apps/{desktop,server,dashboard}`, `packages/{shared,sdk,create-plugin}`, `plugins/`. Pin the Bun version (`packageManager` field) and commit `bun.lock`.
+- [x] TypeScript project references, a strict `tsconfig` base, ESLint and Prettier
+- [x] Vitest workspace config. A placeholder test in each package.
+- [x] `AGENTS.md` and `CLAUDE.md`: architecture summary, glossary (widget, pipeline, node, run, plugin), conventions, commands, the definition of done, and "never commit secrets"
+- [x] `LICENSE` (MIT), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, issue and PR templates
+- [x] `docs/adr/` containing the 10 decisions above
+- [x] GitHub Actions (`oven-sh/setup-bun` and `actions/setup-node`): lint, typecheck and test on `ubuntu-latest` and `windows-latest`. `cargo check` for the shell.
+- [x] Renovate or Dependabot configuration
+- [x] Register the Overly Twitch application (public client type, Device Code Flow enabled) and record its Client ID in the config
 
 **Exit criteria:** `bun install --frozen-lockfile && bun run lint && bun run typecheck && bun run test` passes in CI on Windows and Linux.
 

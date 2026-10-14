@@ -1,0 +1,23 @@
+node_modules/
+dist/
+*.tsbuildinfo
+coverage/
+.vite/
+
+# Rust / Tauri
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
+
+# Env and secrets: never commit these
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

@@ -1,0 +1,3 @@
+[install]
+# Each package only sees the dependencies it declares (no phantom dependencies).
+linker = "isolated"

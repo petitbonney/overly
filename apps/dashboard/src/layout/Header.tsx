@@ -1,5 +1,6 @@
 import { Badge, Burger, Group, Title } from '@mantine/core';
 
+import { ConnectionBadge } from './ConnectionBadge.js';
 import { ThemeToggle } from './ThemeToggle.js';
 
 export function Header({
@@ -24,6 +25,7 @@ export function Header({
         </Title>
       </Group>
       <Group gap="sm" wrap="nowrap">
+        <ConnectionBadge />
         <Badge variant="light" color="gray">
           Twitch: not connected
         </Badge>

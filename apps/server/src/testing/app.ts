@@ -5,6 +5,7 @@ import type { FastifyInstance } from 'fastify';
 import pino from 'pino';
 
 import { type AppDeps, buildApp } from '../http/app.js';
+import type { WsHub } from '../ws/hub.js';
 import { OneTimeTokens } from '../security/tokens.js';
 
 export const TEST_PORT = 6859;
@@ -13,6 +14,7 @@ export const TEST_ORIGIN = `http://${TEST_HOST}`;
 
 export interface TestApp {
   app: FastifyInstance;
+  hub: WsHub;
   tokens: OneTimeTokens;
   deps: AppDeps;
 }
@@ -29,8 +31,8 @@ export async function buildTestApp(overrides: Partial<AppDeps> = {}): Promise<Te
     dashboardDir: undefined,
     ...overrides,
   };
-  const app = await buildApp(deps);
-  return { app, tokens: deps.tokens, deps };
+  const { app, hub } = await buildApp(deps);
+  return { app, hub, tokens: deps.tokens, deps };
 }
 
 /** Runs the token exchange and returns a `name=value` header for later requests. */

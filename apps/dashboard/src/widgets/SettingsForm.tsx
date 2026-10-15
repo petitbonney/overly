@@ -45,6 +45,8 @@ export function SettingsForm({
     mode: 'controlled',
     initialValues: { name: widget.name, settings: widget.settings } satisfies FormValues,
     validate: (values) => validate(type, values),
+    // Save is disabled while the form is invalid, so errors must show as the user types.
+    validateInputOnChange: true,
   });
 
   const values = form.getValues();
@@ -68,15 +70,18 @@ export function SettingsForm({
   }, [dirty]);
 
   // Saved elsewhere (another tab): take the new values unless there are unsaved changes here.
+  // Saved settings that fail the schema (settings_invalid) show each issue at its field.
   const savedKey = JSON.stringify({ name: widget.name, settings: widget.settings });
+  const savedInvalid = widget.problems.some((problem) => problem.code === 'settings_invalid');
   useEffect(() => {
     if (form.isDirty()) return;
     const saved = JSON.parse(savedKey) as FormValues;
     form.setInitialValues(saved);
     form.setValues(saved);
+    if (savedInvalid) form.validate();
     // `form` is stable; only new saved values matter.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [savedKey]);
+  }, [savedKey, savedInvalid]);
 
   const submit = form.onSubmit((submitted) => {
     const body = {

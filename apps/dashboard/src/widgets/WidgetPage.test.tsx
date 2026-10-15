@@ -186,6 +186,31 @@ describe('WidgetPage', () => {
     });
   });
 
+  it('shows field errors as you type', async () => {
+    api();
+    const user = userEvent.setup();
+    renderPage();
+    const volume = await screen.findByLabelText('Volume');
+    await user.clear(volume);
+    await user.type(volume, '500');
+    expect(await screen.findByText(/expected number to be <=100/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+  });
+
+  it('shows the issues of invalid saved settings at their fields', async () => {
+    api(
+      detail({
+        status: 'broken',
+        settings: { textTemplate: '{{title}}', volume: 500 },
+        problems: [
+          { code: 'settings_invalid', message: 'Some settings are invalid: volume: Too big' },
+        ],
+      }),
+    );
+    renderPage();
+    expect(await screen.findByText(/expected number to be <=100/)).toBeInTheDocument();
+  });
+
   it('shows problems and makes settings read-only for newer_plugin_version', async () => {
     api(
       detail({

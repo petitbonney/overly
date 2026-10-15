@@ -30,7 +30,7 @@ export interface ServerOptions {
   /** Folder of the built-in plugins. */
   pluginsDir: string;
   /** The built overlay SDK, served at /sdk/overlay.js. */
-  overlaySdkPath?: string | undefined;
+  overlaySdkPath: string;
   prettyLogs: boolean;
 }
 

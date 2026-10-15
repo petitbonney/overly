@@ -9,8 +9,8 @@
     ".": "./src/server.ts"
   },
   "scripts": {
-    "dev": "tsx watch src/main.ts --port 6860 --data-dir ../../.dev-data --dev-origin http://localhost:5173 --pretty-logs",
-    "build": "bun build src/main.ts --target=node --format=esm --outfile=dist/sidecar/server.mjs --external bufferutil --external utf-8-validate --external pino-pretty && node scripts/copy-dashboard.js"
+    "dev": "tsx watch src/main.ts --port 6860 --data-dir ../../.dev-data --dev-origin http://localhost:5173 --plugins-dir ../../plugins --overlay-sdk ../../packages/sdk/dist/browser/overlay.js --pretty-logs",
+    "build": "bun build src/main.ts --target=node --format=esm --outfile=dist/sidecar/server.mjs --external bufferutil --external utf-8-validate --external pino-pretty && bun scripts/copy-runtime-files.js"
   },
   "dependencies": {
     "@fastify/cookie": "11.1.3",

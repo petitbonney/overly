@@ -71,6 +71,11 @@ async function main(argv: readonly string[]): Promise<number> {
       ? fileURLToPath(new URL('./plugins/', import.meta.url))
       : resolve(options.pluginsDir);
 
+  const overlaySdkPath =
+    options.overlaySdk === undefined
+      ? fileURLToPath(new URL('./sdk/overlay.js', import.meta.url))
+      : resolve(options.overlaySdk);
+
   let server: RunningServer;
   try {
     server = await startServer({
@@ -79,6 +84,7 @@ async function main(argv: readonly string[]): Promise<number> {
       devOrigins: options.devOrigins,
       dashboardDir,
       pluginsDir,
+      overlaySdkPath,
       prettyLogs: options.prettyLogs,
     });
   } catch (error) {

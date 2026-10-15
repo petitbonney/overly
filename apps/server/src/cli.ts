@@ -9,6 +9,8 @@ export interface CliOptions {
   devOrigins: string[];
   dashboardDir: string | undefined;
   pluginsDir: string | undefined;
+  /** The built overlay SDK, served at /sdk/overlay.js. */
+  overlaySdk: string | undefined;
   prettyLogs: boolean;
 }
 
@@ -30,6 +32,7 @@ export function parseCliArgs(argv: readonly string[]): CliOptions {
         'dev-origin': { type: 'string', multiple: true, default: [] },
         'dashboard-dir': { type: 'string' },
         'plugins-dir': { type: 'string' },
+        'overlay-sdk': { type: 'string' },
         'pretty-logs': { type: 'boolean', default: false },
       },
     }));
@@ -52,6 +55,7 @@ export function parseCliArgs(argv: readonly string[]): CliOptions {
     devOrigins: values['dev-origin'],
     dashboardDir: values['dashboard-dir'],
     pluginsDir: values['plugins-dir'],
+    overlaySdk: values['overlay-sdk'],
     prettyLogs: values['pretty-logs'],
   };
 }

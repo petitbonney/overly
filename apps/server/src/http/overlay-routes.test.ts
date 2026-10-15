@@ -115,9 +115,12 @@ describe('overlay routes', () => {
     expect(page.statusCode).toBe(200);
     expect(page.headers['access-control-allow-origin']).toBe('*');
     expect(page.headers['cache-control']).toBe('no-cache');
+    // Opened directly, a plugin page or SVG must not run on the dashboard's origin.
+    expect(page.headers['content-security-policy']).toBe('sandbox allow-scripts');
     const icon = await get('/plugins/fixture.widgets/icons/icon.svg');
     expect(icon.statusCode).toBe(200);
     expect(icon.headers['content-type']).toContain('image/svg+xml');
+    expect(icon.headers['content-security-policy']).toBe('sandbox allow-scripts');
     expect((await get('/plugins/fixture.widgets/overly.plugin.json')).statusCode).toBe(404);
     expect((await get('/plugins/nope/overlay/index.html')).statusCode).toBe(404);
   });

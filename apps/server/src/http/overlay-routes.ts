@@ -91,10 +91,15 @@ export function registerOverlayRoutes(
     async (request, reply) => {
       const file = await registry.publicFile(request.params.pluginId, request.params['*']);
       if (file === undefined) return reply.code(404).send({ error: 'not_found' });
-      return reply
-        .header('Access-Control-Allow-Origin', '*')
-        .header('Cache-Control', 'no-cache')
-        .sendFile(basename(file), dirname(file), { cacheControl: false });
+      return (
+        reply
+          .header('Access-Control-Allow-Origin', '*')
+          .header('Cache-Control', 'no-cache')
+          // A plugin page or SVG opened directly (not through /o/) gets the overlay sandbox too,
+          // so plugin code never runs on the dashboard's origin. Subresources ignore it.
+          .header('Content-Security-Policy', 'sandbox allow-scripts')
+          .sendFile(basename(file), dirname(file), { cacheControl: false })
+      );
     },
   );
 

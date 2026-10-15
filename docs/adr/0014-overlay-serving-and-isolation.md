@@ -12,7 +12,7 @@ OBS loads overlays at `http://127.0.0.1:<port>/o/<widgetId>` and doesn't share t
 - Overlay pages, plugin files (`/plugins/<pluginId>/…`, limited to overlay folders and icons), the overlay SDK (`/sdk/overlay.js`) and assets (`/assets/<id>`) need **no session**. The Host check still applies.
 - Every overlay page is served with **`Content-Security-Policy: sandbox allow-scripts`** (and `frame-ancestors` limited to the dashboard's origins), so it runs in an **opaque origin** everywhere: OBS, the preview and any browser tab. The preview iframe is also sandboxed.
 - The overlay WebSocket `/o/<widgetId>/ws` accepts `Origin: null` (the opaque origin) besides the usual origins. The dashboard socket `/ws` keeps its strict checks.
-- Public plugin files, the SDK and assets send `Access-Control-Allow-Origin: *`, which module scripts, fonts and `fetch` from an opaque origin need. Assets also carry `Content-Security-Policy: sandbox`, so an uploaded SVG opened directly runs no script.
+- Public plugin files, the SDK and assets send `Access-Control-Allow-Origin: *`, which module scripts, fonts and `fetch` from an opaque origin need. Plugin files also carry `Content-Security-Policy: sandbox allow-scripts`, so a plugin page or SVG opened directly (or navigated to by an overlay) still runs in an opaque origin, and assets carry `Content-Security-Policy: sandbox`, so an uploaded SVG opened directly runs no script.
 - The widget ID (12 random characters, about 62 bits) is the overlay's only credential until LAN mode adds tokens (ADR 0007).
 - Dashboard pages get a Content-Security-Policy (`default-src 'self'`, styles inline for Mantine, `frame-ancestors 'none'`).
 

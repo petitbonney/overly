@@ -15,7 +15,7 @@
     "plugins/*"
   ],
   "scripts": {
-    "dev": "bun run --filter @overly/server --filter @overly/dashboard --filter @overly/sdk dev",
+    "dev": "bun run --parallel --filter @overly/server --filter @overly/dashboard --filter @overly/sdk dev",
     "dev:desktop": "bun run build && cargo run --manifest-path apps/desktop/src-tauri/Cargo.toml",
     "build": "bun run --filter @overly/dashboard build && bun run --filter @overly/sdk build && bun run --filter @overly/server build",
     "lint": "eslint . --max-warnings 0 && prettier --check .",

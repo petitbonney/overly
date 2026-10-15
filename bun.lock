@@ -80,6 +80,9 @@
       "dependencies": {
         "@overly/shared": "workspace:*",
       },
+      "devDependencies": {
+        "jsdom": "30.1.2",
+      },
     },
     "packages/shared": {
       "name": "@overly/shared",

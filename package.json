@@ -23,6 +23,7 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
+    "generate:schemas": "bun packages/shared/scripts/generate-schemas.js",
     "check:desktop": "cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml",
     "test:sidecar": "OVERLY_SIDECAR_ENTRY=apps/server/dist/sidecar/server.mjs vitest run --project @overly/server main.process"
   },

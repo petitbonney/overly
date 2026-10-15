@@ -39,7 +39,7 @@
           "durationSeconds": {
             "type": "number",
             "title": "Duration",
-            "description": "How long each alert stays on screen.",
+            "description": "How long each alert stays on screen. A longer sound stops with it.",
             "minimum": 1,
             "maximum": 60,
             "default": 6,

@@ -63,8 +63,10 @@ export async function playAlert(root, alert, settings, deps) {
   }
 
   const soundUrl = deps.assetUrl(String(settings['sound'] ?? ''));
+  /** @type {HTMLAudioElement | undefined} */
+  let audio;
   if (soundUrl !== '') {
-    const audio = root.ownerDocument.createElement('audio');
+    audio = root.ownerDocument.createElement('audio');
     audio.setAttribute('src', soundUrl);
     audio.volume = Math.min(1, Math.max(0, Number(settings['volume'] ?? 80) / 100));
     audio.play().catch(() => undefined);
@@ -74,4 +76,6 @@ export async function playAlert(root, alert, settings, deps) {
   await deps.wait(Number(settings['durationSeconds'] ?? 6) * 1000);
   root.classList.remove('visible');
   await deps.wait(FADE_MS);
+  // A sound longer than the alert stops with it, so it never plays over the next one.
+  audio?.pause();
 }

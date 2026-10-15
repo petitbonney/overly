@@ -79,6 +79,23 @@ describe('playAlert', () => {
     expect(played[0]?.volume).toBe(0.8);
   });
 
+  it('stops the sound when the alert ends, so it never plays over the next one', async () => {
+    const paused: HTMLMediaElement[] = [];
+    vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(function (
+      this: HTMLMediaElement,
+    ) {
+      paused.push(this);
+    });
+    await playAlert(
+      root,
+      alert,
+      { sound: 'zzzzzzzzzz99', durationSeconds: 1 },
+      { assetUrl, wait: () => Promise.resolve() },
+    );
+    expect(paused).toEqual(played);
+    expect(played).toHaveLength(1);
+  });
+
   it('shows text only when there is no image, sound or message', async () => {
     await playAlert(
       root,

@@ -49,6 +49,7 @@ export async function buildTestApp(
     dashboardDir: undefined,
     widgets: services.service,
     registry: services.registry,
+    assets: services.assets,
     ...overrides,
   };
   const { app, hub } = await buildApp(deps);

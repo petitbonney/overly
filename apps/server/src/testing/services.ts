@@ -6,6 +6,7 @@ import type { PluginBackendDefinition } from '@overly/sdk/backend';
 import type { ServerMessage, WidgetDocument } from '@overly/shared';
 import pino from 'pino';
 
+import { AssetStore } from '../assets/store.js';
 import { EventBus } from '../events/bus.js';
 import { PluginRegistry } from '../plugins/registry.js';
 import { OverlayHub } from '../widgets/overlay-hub.js';
@@ -35,6 +36,7 @@ export function counterDoc(overrides: Partial<WidgetDocument> = {}): WidgetDocum
 
 export interface TestServices {
   service: WidgetService;
+  assets: AssetStore;
   registry: PluginRegistry;
   store: WidgetStore;
   overlays: OverlayHub;
@@ -60,6 +62,7 @@ export async function createTestServices(
     /** Also receives every dashboard message (the recorded `messages` always do). */
     notify?: (message: ServerMessage) => void;
     overlayBaseUrl?: () => string;
+    assetMaxBytes?: number;
   } = {},
 ): Promise<TestServices> {
   const logger = pino({ level: 'silent' });
@@ -107,5 +110,11 @@ export async function createTestServices(
     now,
   });
   ref.service = service;
-  return { service, registry, store, overlays, events, messages, dataDir, pluginsDir };
+  const assets = await AssetStore.open({
+    dir: join(dataDir, 'assets'),
+    logger,
+    now,
+    ...(options.assetMaxBytes === undefined ? {} : { maxBytes: options.assetMaxBytes }),
+  });
+  return { service, assets, registry, store, overlays, events, messages, dataDir, pluginsDir };
 }

@@ -31,8 +31,8 @@ function wantsPage(request: FastifyRequest): boolean {
   );
 }
 
-function sendPage(reply: FastifyReply): FastifyReply {
-  return reply.header('X-Frame-Options', 'DENY').sendFile('index.html');
+function sendPage(reply: FastifyReply, dashboardDir: string): FastifyReply {
+  return reply.header('X-Frame-Options', 'DENY').sendFile('index.html', dashboardDir);
 }
 
 /**
@@ -57,12 +57,14 @@ export async function registerDashboard(
     root: dashboardDir,
     wildcard: true,
     index: false,
+    // registerStatic decorates reply.sendFile once for the whole app.
+    decorateReply: false,
     setHeaders: (reply, path) => {
       if (path.endsWith('.html')) reply.header('X-Frame-Options', 'DENY');
     },
   });
-  app.get('/', (_request, reply) => sendPage(reply));
+  app.get('/', (_request, reply) => sendPage(reply, dashboardDir));
   app.setNotFoundHandler((request, reply) =>
-    wantsPage(request) ? sendPage(reply) : reply.code(404).send(notFound),
+    wantsPage(request) ? sendPage(reply, dashboardDir) : reply.code(404).send(notFound),
   );
 }

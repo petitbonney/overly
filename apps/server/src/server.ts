@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { OVERLY_VERSION, WS_CLOSE_SHUTDOWN } from '@overly/shared';
 import type pino from 'pino';
 
+import { AssetStore } from './assets/store.js';
 import { openSettings, SETTINGS_FILE } from './config/settings.js';
 import { listenError, StartupError } from './errors.js';
 import { EventBus } from './events/bus.js';
@@ -76,6 +77,7 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
 
   const registry = await PluginRegistry.load({ pluginsDir: options.pluginsDir, logger });
   const store = await WidgetStore.open({ dir: join(dataDir, 'widgets'), logger });
+  const assets = await AssetStore.open({ dir: join(dataDir, 'assets'), logger });
   const events = new EventBus({
     onListenerError: (error) => {
       logger.error({ err: error }, 'An event listener failed');
@@ -113,6 +115,7 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
     dashboardDir: options.dashboardDir,
     widgets,
     registry,
+    assets,
   });
   ref.hub = hub;
 
@@ -135,7 +138,7 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
   shutdown.add('widgets', () => widgets.shutdown());
   shutdown.add('http', () => app.close());
   shutdown.add('documents', () =>
-    Promise.all([settings.flush(), store.flush()]).then(() => undefined),
+    Promise.all([settings.flush(), store.flush(), assets.flush()]).then(() => undefined),
   );
   shutdown.add('logger', flush);
 

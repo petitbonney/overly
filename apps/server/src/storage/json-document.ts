@@ -2,7 +2,7 @@ import { readFile, rename } from 'node:fs/promises';
 
 import type { z } from 'zod';
 
-import { writeFileAtomic } from './atomic-write.js';
+import { SerializedWriter } from './serialized-writer.js';
 
 /** The part of a pino logger that documents use. */
 export interface DocumentLogger {
@@ -60,14 +60,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  */
 export class JsonDocument<T extends { schemaVersion: number }> {
   readonly #options: JsonDocumentOptions<T>;
-  readonly #write: (path: string, data: string) => Promise<void>;
+  readonly #writer: SerializedWriter;
   #value: T;
-  #pending: string | undefined;
-  #writing: Promise<void> | undefined;
 
   private constructor(options: JsonDocumentOptions<T>, value: T) {
     this.#options = options;
-    this.#write = options.write ?? ((path, data) => writeFileAtomic(path, data));
+    this.#writer = new SerializedWriter(options.path, options.write);
     this.#value = value;
   }
 
@@ -76,7 +74,7 @@ export class JsonDocument<T extends { schemaVersion: number }> {
   ): Promise<JsonDocument<T>> {
     const { value, save } = await load(options);
     const doc = new JsonDocument(options, value);
-    if (save) await doc.#schedule(serialize(value));
+    if (save) await doc.#writer.schedule(serialize(value));
     return doc;
   }
 
@@ -89,7 +87,7 @@ export class JsonDocument<T extends { schemaVersion: number }> {
     const parsed = this.#options.schema.safeParse(next);
     if (!parsed.success) return Promise.reject(parsed.error);
     this.#value = parsed.data;
-    return this.#schedule(serialize(parsed.data));
+    return this.#writer.schedule(serialize(parsed.data));
   }
 
   update(fn: (current: T) => T): Promise<void> {
@@ -98,28 +96,7 @@ export class JsonDocument<T extends { schemaVersion: number }> {
 
   /** Resolves when every value set so far is on disk. */
   flush(): Promise<void> {
-    if (this.#pending !== undefined && this.#writing === undefined) {
-      this.#writing = this.#drain();
-    }
-    return this.#writing ?? Promise.resolve();
-  }
-
-  #schedule(data: string): Promise<void> {
-    this.#pending = data;
-    this.#writing ??= this.#drain();
-    return this.#writing;
-  }
-
-  async #drain(): Promise<void> {
-    try {
-      while (this.#pending !== undefined) {
-        const data = this.#pending;
-        this.#pending = undefined;
-        await this.#write(this.#options.path, data);
-      }
-    } finally {
-      this.#writing = undefined;
-    }
+    return this.#writer.flush();
   }
 }
 

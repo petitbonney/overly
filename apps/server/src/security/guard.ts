@@ -1,7 +1,12 @@
 import type { ApiErrorCode } from '@overly/shared';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
-import { type Allowlist, requiresOrigin, requiresSession } from './allowlist.js';
+import {
+  type Allowlist,
+  isOverlaySocketPath,
+  requiresOrigin,
+  requiresSession,
+} from './allowlist.js';
 import { isSessionValueFresh, SESSION_COOKIE } from './session.js';
 
 function reject(reply: FastifyReply, status: number, error: ApiErrorCode): FastifyReply {
@@ -40,8 +45,12 @@ export function registerGuard(
       return reject(reply, 403, 'forbidden_host');
     }
     const isUpgrade = request.headers.upgrade?.toLowerCase() === 'websocket';
+    // Sandboxed overlay pages have an opaque origin: their socket upgrade says `Origin: null`.
+    const opaqueOverlay =
+      isUpgrade && request.headers.origin === 'null' && isOverlaySocketPath(requestPath(request));
     if (
       requiresOrigin(request.method, isUpgrade) &&
+      !opaqueOverlay &&
       !allowlist.isAllowedOrigin(request.headers.origin)
     ) {
       return reject(reply, 403, 'forbidden_origin');

@@ -55,7 +55,8 @@ describe('dashboard serving', () => {
     for (const url of ['/api/nope', '/o/x', '/assets/x', '/ws/x']) {
       const res = await app.inject({ url, headers: { ...html, cookie } });
       expect(res.statusCode, url).toBe(404);
-      expect(res.json(), url).toEqual({ error: 'not_found' });
+      // An error from the route or the 404 handler, never the dashboard page.
+      expect(res.body, url).not.toContain('<title>Overly</title>');
     }
   });
 

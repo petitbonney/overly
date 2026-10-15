@@ -1,6 +1,8 @@
 export interface Allowlist {
   isAllowedHost(host: string | undefined): boolean;
   isAllowedOrigin(origin: string | undefined): boolean;
+  /** The origins the dashboard runs on, for `frame-ancestors` of overlay pages. */
+  allowedOrigins(): string[];
 }
 
 /**
@@ -27,7 +29,16 @@ export function createAllowlist(getPort: () => number, devOrigins: readonly stri
         dev.includes(normalized)
       );
     },
+    allowedOrigins() {
+      const port = String(getPort());
+      return [`http://127.0.0.1:${port}`, `http://localhost:${port}`, ...devOrigins];
+    },
   };
+}
+
+/** `/o/<widgetId>/ws`: the overlay socket, whose upgrade may come from `Origin: null`. */
+export function isOverlaySocketPath(pathname: string): boolean {
+  return /^\/o\/[a-z0-9]{12}\/ws$/.test(pathname);
 }
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);

@@ -83,39 +83,39 @@ This roadmap is split into phases. Each phase ends with something you can run an
 **Goal:** you can add, configure, preview and save widgets, copy an overlay URL that works in OBS, and test widget actions by hand. There is no Twitch connection and there are no pipelines yet.
 
 ### Plugin format (`packages/shared`, `docs/plugins/`)
-- [ ] `overly.plugin.json` manifest spec (with a Zod schema and a JSON Schema export):
+- [x] `overly.plugin.json` manifest spec (with a Zod schema and a JSON Schema export):
   - `id`, `name`, `version`, `apiVersion`, `description`, `author`, `icon`, `permissions`, optional `backend` entry
   - `widgets[]`: `type`, name, icon, `settings` (JSON Schema plus UI hints), optional `overlay` (entry HTML and recommended size), `actions` (parameter schema, output schema, sample parameters), `events` (payload schema, sample payload)
   - `nodes[]`: reserved for Phase 4 (declared now so the format doesn't need to change later)
-- [ ] Versioning rules: `apiVersion` compatibility check, and settings `migrate` hooks between plugin versions
-- [ ] Built-in features use the same format from day one (`plugins/`)
+- [x] Versioning rules: `apiVersion` compatibility check, and settings `migrate` hooks between plugin versions
+- [x] Built-in features use the same format from day one (`plugins/`)
 
 ### Runtime (`apps/server`)
-- [ ] Plugin registry: load built-in plugins, validate manifests, and report broken plugins in the dashboard without crashing
-- [ ] Widget store: create, read, update, delete, duplicate and enable/disable. One JSON document per widget.
-- [ ] Widget host: widget backend logic gets a context with `settings`, persistent `state`, `emitToOverlay`, `emitEvent` (for pipelines later), `log`, and permission-scoped platform APIs. Built-in plugins run in the server process. The isolated process for third-party plugins comes in Phase 8, but the message-based API is designed for it now.
-- [ ] Per-widget **action queue** (for actions that take time, such as alerts) with priority and a maximum length
-- [ ] Overlay serving: `/o/<widgetId>` serves the overlay with the SDK injected. Plugin static files are served under a per-plugin path.
-- [ ] WebSocket bus: overlays subscribe to their widget and receive `settings` (on load and when saved), `action` and custom messages
-- [ ] Asset library: upload images, sounds, fonts and videos to app data, served at `/assets/<id>`, and selectable from settings fields
+- [x] Plugin registry: load built-in plugins, validate manifests, and report broken plugins in the dashboard without crashing
+- [x] Widget store: create, read, update, delete, duplicate and enable/disable. One JSON document per widget.
+- [x] Widget host: widget backend logic gets a context with `settings`, persistent `state`, `emitToOverlay`, `emitEvent` (for pipelines later), `log`, and permission-scoped platform APIs. Built-in plugins run in the server process. The isolated process for third-party plugins comes in Phase 8, but the message-based API is designed for it now.
+- [x] Per-widget **action queue** (for actions that take time, such as alerts) with priority and a maximum length
+- [x] Overlay serving: `/o/<widgetId>` serves the overlay with the SDK injected. Plugin static files are served under a per-plugin path.
+- [x] WebSocket bus: overlays subscribe to their widget and receive `settings` (on load and when saved), `action` and custom messages
+- [x] Asset library: upload images, sounds, fonts and videos to app data, served at `/assets/<id>`, and selectable from settings fields
 
 ### SDK (`packages/sdk`)
-- [ ] Overlay side: `overly.onSettings()`, `overly.onAction(name, fn)`, `overly.on(msg, fn)`, `overly.actionDone(result)`, reconnect with backoff, `isPreview`
-- [ ] Backend side: typed widget context (as described in Runtime above)
-- [ ] Published types so plugin authors get autocompletion
+- [x] Overlay side: `overly.onSettings()`, `overly.onAction(name, fn)` (the action is done when `fn` returns or resolves), `overly.on(msg, fn)`, reconnect with backoff, `isPreview`
+- [x] Backend side: typed widget context (as described in Runtime above)
+- [x] Published types so plugin authors get autocompletion
 
 ### Dashboard
-- [ ] **Widgets** list: search, enabled toggle, type icon, broken badge
-- [ ] `+` opens the **widget library modal** (grid of widget types with search and description) and creates a widget
-- [ ] Widget page: name, a settings form generated from the schema, and **Save** with a dirty indicator and a "discard changes" option
-- [ ] **Preview**: an iframe of the overlay with `?preview=1` (muted by default, scaled to fit), for widget types that have an overlay
-- [ ] **Copy URL** button with the recommended Browser Source size, shown only when the widget has an overlay
-- [ ] **Test** buttons that run each action with its sample parameters
-- [ ] Delete and duplicate widgets
+- [x] **Widgets** list: search, enabled toggle, type icon, broken badge
+- [x] `+` opens the **widget library modal** (grid of widget types with search and description) and creates a widget
+- [x] Widget page: name, a settings form generated from the schema, and **Save** with a dirty indicator and a "discard changes" option
+- [x] **Preview**: an iframe of the overlay with `?preview=1` (muted by default, scaled to fit), for widget types that have an overlay
+- [x] **Copy URL** button with the recommended Browser Source size, shown only when the widget has an overlay
+- [x] **Test** buttons that run each action with its sample parameters
+- [x] Delete and duplicate widgets
 
 ### First built-in widgets (to validate the format)
-- [ ] **Text banner**: actions `show(text)` and `hide`
-- [ ] **Alerts (basic)**: image, sound and text template, queued. Action: `show-alert(title, message, variant)`.
+- [x] **Text banner**: actions `show(text)` and `hide`
+- [x] **Alerts (basic)**: image, sound and text template, queued. Action: `show-alert(title, message, variant)`.
 
 **Exit criteria:** create an Alerts widget, configure an image and a sound, save, copy the URL into OBS, press *Test*, and see and hear the alert in OBS and in the preview. Three quick *Test* presses play one after another, not on top of each other. Restarting the app keeps everything.
 

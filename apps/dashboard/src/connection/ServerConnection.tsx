@@ -1,7 +1,20 @@
-import { ServerMessageSchema } from '@overly/shared';
-import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
-
-import { reconnectDelay } from './backoff.js';
+import {
+  reconnectDelay,
+  type ServerMessage,
+  ServerMessageSchema,
+  type WidgetActionMessage,
+  type WidgetDetail,
+} from '@overly/shared';
+import { type QueryClient, useQueryClient } from '@tanstack/react-query';
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting';
 
@@ -13,7 +26,17 @@ export interface ServerSocket {
   close(): void;
 }
 
-const ConnectionContext = createContext<ConnectionStatus>('connecting');
+type ActionListener = (message: WidgetActionMessage) => void;
+
+interface ConnectionContextValue {
+  status: ConnectionStatus;
+  subscribe: (listener: ActionListener) => () => void;
+}
+
+const ConnectionContext = createContext<ConnectionContextValue>({
+  status: 'connecting',
+  subscribe: () => () => undefined,
+});
 
 function defaultUrl(): string {
   return `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`;
@@ -23,19 +46,46 @@ function defaultCreateSocket(url: string): ServerSocket {
   return new WebSocket(url);
 }
 
-function handleMessage(event: MessageEvent): void {
-  if (typeof event.data !== 'string') return;
-  let json: unknown;
+function parseMessage(event: MessageEvent): ServerMessage | undefined {
+  if (typeof event.data !== 'string') return undefined;
   try {
-    json = JSON.parse(event.data);
+    const result = ServerMessageSchema.safeParse(JSON.parse(event.data));
+    return result.success ? result.data : undefined;
   } catch {
-    return;
+    return undefined;
   }
-  // Phase 1 only receives `hello`. Messages that fail the schema are ignored.
-  ServerMessageSchema.safeParse(json);
 }
 
-/** Keeps one WebSocket to the server open, reconnecting with backoff, and shares its status. */
+/** Keeps the TanStack Query cache in step with what the server broadcasts. */
+function applyMessage(
+  client: QueryClient,
+  listeners: ReadonlySet<ActionListener>,
+  message: ServerMessage,
+): void {
+  switch (message.type) {
+    case 'hello':
+      return;
+    case 'widgets.changed':
+      void client.invalidateQueries({ queryKey: ['widgets'] });
+      if (message.widgetId !== undefined) {
+        void client.invalidateQueries({ queryKey: ['widget', message.widgetId] });
+      }
+      return;
+    case 'widget.runtime':
+      client.setQueryData<WidgetDetail>(['widget', message.widgetId], (old) =>
+        old === undefined ? old : { ...old, runtime: message.runtime },
+      );
+      return;
+    case 'widget.action':
+      for (const listener of listeners) listener(message);
+      return;
+  }
+}
+
+/**
+ * Keeps one WebSocket to the server open, reconnecting with backoff. Shares its status, applies
+ * widget updates to the query cache, and passes action progress to subscribers.
+ */
 export function ServerConnectionProvider({
   children,
   url,
@@ -45,7 +95,9 @@ export function ServerConnectionProvider({
   url?: string;
   createSocket?: (url: string) => ServerSocket;
 }) {
+  const client = useQueryClient();
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
+  const listeners = useRef(new Set<ActionListener>());
 
   useEffect(() => {
     const target = url ?? defaultUrl();
@@ -53,14 +105,21 @@ export function ServerConnectionProvider({
     let timer: ReturnType<typeof setTimeout> | undefined;
     let attempt = 0;
     let stopped = false;
+    let connectedBefore = false;
 
     const connect = (): void => {
       socket = createSocket(target);
       socket.onopen = () => {
         attempt = 0;
         setStatus('connected');
+        // Updates broadcast while the socket was down (a server restart) were missed.
+        if (connectedBefore) void client.invalidateQueries();
+        connectedBefore = true;
       };
-      socket.onmessage = handleMessage;
+      socket.onmessage = (event) => {
+        const message = parseMessage(event);
+        if (message !== undefined) applyMessage(client, listeners.current, message);
+      };
       socket.onclose = () => {
         if (stopped) return;
         setStatus('reconnecting');
@@ -75,11 +134,40 @@ export function ServerConnectionProvider({
       clearTimeout(timer);
       socket?.close();
     };
-  }, [url, createSocket]);
+  }, [url, createSocket, client]);
 
-  return <ConnectionContext.Provider value={status}>{children}</ConnectionContext.Provider>;
+  const value = useMemo<ConnectionContextValue>(
+    () => ({
+      status,
+      subscribe: (listener) => {
+        listeners.current.add(listener);
+        return () => {
+          listeners.current.delete(listener);
+        };
+      },
+    }),
+    [status],
+  );
+
+  return <ConnectionContext.Provider value={value}>{children}</ConnectionContext.Provider>;
 }
 
 export function useConnectionStatus(): ConnectionStatus {
-  return useContext(ConnectionContext);
+  return useContext(ConnectionContext).status;
+}
+
+/** Calls `listener` for every `widget.action` message, while the component is mounted. */
+export function useActionUpdates(listener: ActionListener): void {
+  const { subscribe } = useContext(ConnectionContext);
+  const latest = useRef(listener);
+  useEffect(() => {
+    latest.current = listener;
+  });
+  useEffect(
+    () =>
+      subscribe((message) => {
+        latest.current(message);
+      }),
+    [subscribe],
+  );
 }

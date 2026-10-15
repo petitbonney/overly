@@ -1,9 +1,12 @@
+import type { WidgetActionMessage } from '@overly/shared';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   type ServerSocket,
   ServerConnectionProvider,
+  useActionUpdates,
   useConnectionStatus,
 } from './ServerConnection.js';
 
@@ -33,20 +36,31 @@ class FakeSocket implements ServerSocket {
       this.onclose?.(new CloseEvent('close', { code: 1006 }));
     });
   }
+
+  receive(message: unknown): void {
+    act(() => {
+      this.onmessage?.(new MessageEvent('message', { data: JSON.stringify(message) }));
+    });
+  }
 }
 
 function Status() {
   return <p>{useConnectionStatus()}</p>;
 }
 
-function renderConnection(url?: string) {
+let client: QueryClient;
+
+function renderConnection(url?: string, children = <Status />) {
+  client = new QueryClient();
   return render(
-    <ServerConnectionProvider
-      createSocket={(target) => new FakeSocket(target)}
-      {...(url === undefined ? {} : { url })}
-    >
-      <Status />
-    </ServerConnectionProvider>,
+    <QueryClientProvider client={client}>
+      <ServerConnectionProvider
+        createSocket={(target) => new FakeSocket(target)}
+        {...(url === undefined ? {} : { url })}
+      >
+        {children}
+      </ServerConnectionProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -100,5 +114,69 @@ describe('ServerConnectionProvider', () => {
       vi.advanceTimersByTime(60_000);
     });
     expect(FakeSocket.instances).toHaveLength(1);
+  });
+});
+
+describe('reconnecting', () => {
+  it('refreshes every query after reconnecting, not on the first connection', () => {
+    vi.useFakeTimers();
+    renderConnection('ws://test/ws');
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    FakeSocket.instances[0]?.open();
+    expect(invalidate).not.toHaveBeenCalled();
+    FakeSocket.instances[0]?.drop();
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    FakeSocket.instances[1]?.open();
+    // Messages sent while disconnected (runtime counts, widget changes) were missed.
+    expect(invalidate).toHaveBeenCalledWith();
+  });
+});
+
+describe('server messages', () => {
+  const W = 'abcdefghij12';
+
+  it('invalidates widget queries on widgets.changed', () => {
+    renderConnection('ws://test/ws');
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    FakeSocket.instances[0]?.receive({ type: 'widgets.changed', widgetId: W });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['widgets'] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['widget', W] });
+  });
+
+  it('patches the cached runtime on widget.runtime', () => {
+    renderConnection('ws://test/ws');
+    client.setQueryData(['widget', W], { id: W, name: 'Alerts', runtime: null });
+    const runtime = { overlays: { live: 1, preview: 0 }, queue: { pending: 2, running: 'show' } };
+    FakeSocket.instances[0]?.receive({ type: 'widget.runtime', widgetId: W, runtime });
+    expect(client.getQueryData(['widget', W])).toEqual({ id: W, name: 'Alerts', runtime });
+  });
+
+  it('passes widget.action messages to subscribers', () => {
+    const seen: WidgetActionMessage[] = [];
+    function Listener() {
+      useActionUpdates((message) => seen.push(message));
+      return null;
+    }
+    renderConnection('ws://test/ws', <Listener />);
+    FakeSocket.instances[0]?.receive({
+      type: 'widget.action',
+      widgetId: W,
+      actionId: 'a1',
+      action: 'show',
+      status: 'done',
+    });
+    FakeSocket.instances[0]?.receive({ type: 'widget.action', widgetId: W });
+    expect(seen).toEqual([
+      {
+        type: 'widget.action',
+        widgetId: W,
+        actionId: 'a1',
+        action: 'show',
+        status: 'done',
+        warnings: [],
+      },
+    ]);
   });
 });

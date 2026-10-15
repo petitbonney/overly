@@ -16,5 +16,8 @@ Each file records one decision: the context, what was decided, and what follows 
 | [0010](0010-bun-tooling-node-runtime.md) | Bun for tooling, Node.js LTS as the shipped runtime | Accepted |
 | [0011](0011-dashboard-stack.md) | Dashboard stack: React Router, TanStack Query and Mantine | Accepted |
 | [0012](0012-local-server-port-and-sessions.md) | Fixed default port 6859 and signed dashboard sessions | Accepted |
+| [0013](0013-plugin-schema-subset.md) | Plugin schemas are a JSON Schema subset, validated with Zod and rendered by Overly | Accepted |
+| [0014](0014-overlay-serving-and-isolation.md) | Overlays run in an opaque-origin sandbox, served without a session | Accepted |
+| [0015](0015-widget-backend-protocol.md) | Widget backends talk to the host through JSON messages; built-ins are bundled | Accepted |
 
 New ADRs copy [template.md](template.md) and take the next number.

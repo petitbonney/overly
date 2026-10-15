@@ -10,7 +10,7 @@ Overly is a free, open-source desktop app for streamers. It lives in your system
 Everything runs locally: no cloud account, no third-party server between your channel and your overlays.
 
 > [!NOTE]
-> **Status: pre-alpha / planning.** Nothing is usable yet. See [ROADMAP.md](ROADMAP.md) for the plan.
+> **Status: pre-alpha.** Widgets (a text banner and alerts) work in development builds. Twitch and pipelines are not built yet. See [ROADMAP.md](ROADMAP.md) for the plan.
 
 > [!IMPORTANT]
 > **Overly is fully vibe-coded.** The code is written by AI coding agents. Humans set the direction, review the work, and test it on real streams. Contributions written the same way are welcome. See [Contributing](#contributing).
@@ -100,7 +100,7 @@ Everything runs locally: no cloud account, no third-party server between your ch
 | **Node** | One step of a pipeline: a **trigger**, **logic**, or **action** node. It has settings, input and output ports (an *If* node has `true` and `false` outputs), and gives an output that later nodes can use. |
 | **Run** | One execution of a pipeline. The data from its trigger flows along the links. When one node links to several next nodes, those branches run in parallel. Each run is recorded with every node's input, output, timing and errors. |
 | **Expression** | `{{ trigger.user.displayName }}`, `{{ nodes.Wheel.result }}`, `{{ vars.deaths }}`. Values from earlier nodes can be used in any node setting. Expressions are a safe template language, not arbitrary JavaScript. |
-| **Plugin** | A package (`overly.plugin.json`) that adds node types and/or widget types, with optional backend code and declared **permissions** (`twitch:chat:write`, `twitch:polls`, `input:keyboard`, `network`…). Built-in features are built as plugins in the same format. |
+| **Plugin** | A package (`overly.plugin.json`) that adds node types and/or widget types, with optional backend code and declared **permissions** (`chat:write`, `polls:manage`, `input:keyboard`, `network`…). Built-in features are built as plugins in the same format. See [docs/plugins/](docs/plugins/README.md). |
 
 ### Security model (summary)
 
@@ -170,6 +170,13 @@ bun run dev
 ```
 
 Then open the dashboard URL it prints (`http://localhost:5173/?t=…`). Development data goes to `.dev-data/`, and the server uses port 6860, so it doesn't touch an installed Overly.
+
+### Trying widgets
+
+1. In the dashboard, click **+** next to **Widgets** and pick **Alerts** or **Text banner**.
+2. On the widget page, click **Copy URL**. In OBS, add a **Browser Source** with that URL and the recommended width and height shown under it.
+3. Press a **Test** button: the action plays in OBS and in the preview. Alerts wait for each other, so quick presses play one after another.
+4. Change the settings (for Alerts, choose an image and a sound) and click **Save**. The preview follows your edits before you save.
 
 To run the full desktop app with the tray icon (needs Rust):
 

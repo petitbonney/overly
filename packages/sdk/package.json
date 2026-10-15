@@ -6,9 +6,21 @@
   "description": "Overly SDK: overlay side and node/widget backend side.",
   "license": "MIT",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./backend": "./src/backend/index.ts",
+    "./overlay": "./src/overlay/index.ts",
+    "./overlay-global": {
+      "types": "./src/overlay/overly-global.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "bun build src/overlay/global.ts --target=browser --format=iife --minify --outfile=dist/browser/overlay.js",
+    "dev": "bun build src/overlay/global.ts --target=browser --format=iife --outfile=dist/browser/overlay.js --watch"
   },
   "dependencies": {
     "@overly/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "jsdom": "30.1.2"
   }
 }

@@ -1,18 +1,35 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AppRoutes } from './App.js';
+import { mockApi } from './test/api.js';
+import { brokenPlugin, okPlugins } from './test/fixtures.js';
 import { renderWithProviders } from './test/render.js';
 
+let plugins = okPlugins;
+
+beforeEach(() => {
+  plugins = okPlugins;
+  mockApi(({ url }) => {
+    if (url === '/api/widgets') return { body: { widgets: [] } };
+    if (url === '/api/plugins') return { body: { plugins } };
+    return undefined;
+  });
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 describe('dashboard layout', () => {
-  it('shows the Widgets and Pipelines sections with disabled add buttons', () => {
+  it('shows the Widgets and Pipelines sections', async () => {
     renderWithProviders(<AppRoutes />);
     expect(screen.getByRole('heading', { name: 'Widgets' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Pipelines' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Add widget' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Add widget' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Add pipeline' })).toBeDisabled();
-    expect(screen.getByText('No widgets yet.')).toBeInTheDocument();
+    expect(await screen.findByText('No widgets yet.')).toBeInTheDocument();
     expect(screen.getByText('No pipelines yet.')).toBeInTheDocument();
   });
 
@@ -21,9 +38,15 @@ describe('dashboard layout', () => {
     expect(screen.getByRole('heading', { name: 'Welcome to Overly' })).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Widgets and pipelines arrive in the next versions. For now, this page shows that the server is running.',
+        'Add a widget with the + button next to Widgets, then copy its URL into OBS.',
       ),
     ).toBeInTheDocument();
+  });
+
+  it('lists broken plugins on the home page', async () => {
+    plugins = [...okPlugins, brokenPlugin];
+    renderWithProviders(<AppRoutes />);
+    expect(await screen.findByText('A plugin could not be loaded')).toBeInTheDocument();
   });
 
   it('shows the Twitch placeholder', () => {

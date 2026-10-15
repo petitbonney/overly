@@ -43,5 +43,10 @@ export default defineConfig(
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: { globals: globals.node },
   },
+  {
+    // Plugin overlays run in the browser, with the SDK's `overly` global (checked by tsc).
+    files: ['plugins/*/overlay/**/*.js'],
+    languageOptions: { globals: { ...globals.browser, overly: 'readonly' } },
+  },
   prettier,
 );

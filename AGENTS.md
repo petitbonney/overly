@@ -31,7 +31,7 @@ Overlays (/o/<widgetId>, @overly/sdk)     loaded by OBS Browser Sources
 | `packages/shared` | Types and Zod schemas shared by everything (events, manifests, widgets, pipelines), plus constants such as the Twitch Client ID. |
 | `packages/sdk` | `@overly/sdk`: overlay side and widget/node backend side. Public API for plugin authors. |
 | `packages/create-plugin` | `bun create overly-plugin` scaffolder. |
-| `plugins/` | Built-in plugins, in the same format as third-party ones. |
+| `plugins/` | Built-in plugins, in the same format as third-party ones ([docs/plugins/](docs/plugins/README.md)). |
 | `docs/adr/` | Architecture Decision Records. Read them before changing anything they cover. |
 
 Workspaces import each other by package name (`@overly/shared`), declared as `"workspace:*"` dependencies and as TypeScript project `references`.
@@ -55,9 +55,10 @@ Run everything from the repository root.
 | Command | What it does |
 |---|---|
 | `bun install` | Install dependencies (`--frozen-lockfile` in CI) |
-| `bun run dev` | Server (port 6860, data in `.dev-data/`) and the dashboard with hot reload, without the shell. Open the URL it prints. |
+| `bun run dev` | Server (port 6860, data in `.dev-data/`), the dashboard with hot reload, and the overlay SDK rebuilt on change, without the shell. Open the URL it prints. |
 | `bun run dev:desktop` | `bun run build`, then the Tauri shell with its tray (needs Rust) |
-| `bun run build` | Dashboard build, then the sidecar bundle `apps/server/dist/sidecar/server.mjs` (with the dashboard next to it) |
+| `bun run build` | Dashboard build, the overlay SDK bundle, then the sidecar bundle `apps/server/dist/sidecar/server.mjs`, with the dashboard, the built-in plugins and the SDK next to it |
+| `bun run generate:schemas` | Writes `docs/plugins/overly.plugin.schema.json` from the manifest's Zod schema. Run it after changing the manifest or the schema subset (a test checks the file). |
 | `bun run lint` | ESLint (type-aware) and Prettier check |
 | `bun run format` | Format with Prettier |
 | `bun run typecheck` | `tsc -b` across all project references |
@@ -80,6 +81,8 @@ Use **`bun run test`, never `bun test`**: `bun test` starts Bun's own test runne
 - **Security:** keep the localhost model (ADR 0007, ADR 0012): bind to 127.0.0.1, check Host and Origin, require the session cookie. Don't weaken it to make something work.
 - **stdout belongs to JSON-RPC in the server.** When the shell runs the sidecar, stdout carries the protocol in [docs/sidecar-protocol.md](docs/sidecar-protocol.md). Log with the pino logger, never `console` (ESLint enforces it in `apps/server/src`).
 - **Development data** lives in `.dev-data/` at the repository root (git-ignored). Delete it to start fresh.
+- **Plugins:** built-in plugins follow the layout in [plugins/README.md](plugins/README.md). Overlays are plain JavaScript modules with `// @ts-check` and no build step, and they run in an opaque-origin sandbox (no cookies or storage, ADR 0014). Backends use `@overly/sdk/backend` and are registered in `apps/server/src/plugins/builtin.ts` (ADR 0015). Only overlay folders and icons are public.
+- **Server options:** `--plugins-dir` and `--overlay-sdk` point the server at the built-in plugins and the overlay SDK bundle; by default it looks next to `server.mjs`.
 - **Commits:** small and focused, imperative subject line. Use a branch and a pull request, never push to `master`.
 
 ## Never commit secrets

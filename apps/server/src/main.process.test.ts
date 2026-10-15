@@ -1,6 +1,6 @@
 import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { access, mkdtemp, readdir } from 'node:fs/promises';
+import { access, mkdtemp, readdir, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -78,6 +78,21 @@ async function tempDir(): Promise<string> {
   return mkdtemp(join(tmpdir(), 'overly-sidecar-'));
 }
 
+/** From source, the plugins and SDK come from the repository; the bundle finds its own. */
+async function resourceArgs(): Promise<string[]> {
+  if (entry !== undefined) return [];
+  const sdk = join(await tempDir(), 'overlay.js');
+  await writeFile(sdk, 'window.overly = {};');
+  return ['--plugins-dir', join(serverDir, '..', '..', 'plugins'), '--overlay-sdk', sdk];
+}
+
+async function sessionCookie(sidecar: Sidecar, id: number): Promise<string> {
+  sidecar.send({ jsonrpc: '2.0', id, method: 'getDashboardUrl' });
+  const { url } = (await sidecar.next())['result'] as { url: string };
+  const exchange = await fetch(url, { redirect: 'manual' });
+  return (exchange.headers.get('set-cookie') ?? '').split(';')[0] ?? '';
+}
+
 describe('sidecar process', () => {
   it(
     'starts in RPC mode, opens a session, and exits 0 on shutdown',
@@ -105,6 +120,39 @@ describe('sidecar process', () => {
 
       sidecar.send({ jsonrpc: '2.0', id: 2, method: 'shutdown' });
       expect(await sidecar.next()).toEqual({ jsonrpc: '2.0', id: 2, result: {} });
+      expect(await sidecar.exited).toBe(0);
+    },
+    TIMEOUT,
+  );
+
+  it(
+    'serves the overlay SDK and lists plugins',
+    async () => {
+      const sidecar = launch([
+        '--rpc',
+        '--port',
+        '0',
+        '--data-dir',
+        await tempDir(),
+        ...(await resourceArgs()),
+      ]);
+      const ready = await sidecar.next();
+      const port = (ready['params'] as { port: number }).port;
+      const base = `http://127.0.0.1:${String(port)}`;
+
+      const sdk = await fetch(`${base}/sdk/overlay.js`);
+      expect(sdk.status).toBe(200);
+      expect(await sdk.text()).toContain('overly');
+
+      const cookie = await sessionCookie(sidecar, 1);
+      const plugins = await fetch(`${base}/api/plugins`, { headers: { cookie } });
+      expect(plugins.status).toBe(200);
+      const body = (await plugins.json()) as { plugins: { id: string; status: string }[] };
+      for (const id of ['overly.alerts', 'overly.text-banner']) {
+        expect(body.plugins).toContainEqual(expect.objectContaining({ id, status: 'ok' }));
+      }
+
+      sidecar.child.stdin.end();
       expect(await sidecar.exited).toBe(0);
     },
     TIMEOUT,

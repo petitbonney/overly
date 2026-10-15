@@ -10,6 +10,8 @@ describe('parseCliArgs', () => {
       port: undefined,
       devOrigins: [],
       dashboardDir: undefined,
+      pluginsDir: undefined,
+      overlaySdk: undefined,
       prettyLogs: false,
     });
   });
@@ -28,6 +30,10 @@ describe('parseCliArgs', () => {
         'http://b',
         '--dashboard-dir',
         'd',
+        '--plugins-dir',
+        'p',
+        '--overlay-sdk',
+        's.js',
         '--pretty-logs',
       ]),
     ).toEqual({
@@ -36,6 +42,8 @@ describe('parseCliArgs', () => {
       port: 0,
       devOrigins: ['http://a', 'http://b'],
       dashboardDir: 'd',
+      pluginsDir: 'p',
+      overlaySdk: 's.js',
       prettyLogs: true,
     });
   });

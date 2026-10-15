@@ -13,6 +13,11 @@ export default defineConfig({
       '/ws': { target: devServer, changeOrigin: true, ws: true },
       // The one-time token exchange: /?t=<token>
       '^/\\?t=': { target: devServer, changeOrigin: true },
+      // Overlays (with their socket), plugin files, the overlay SDK and assets, for the preview.
+      '^/o/': { target: devServer, changeOrigin: true, ws: true },
+      '/plugins/': { target: devServer, changeOrigin: true },
+      '/sdk/': { target: devServer, changeOrigin: true },
+      '/assets/': { target: devServer, changeOrigin: true },
     },
   },
   build: {

@@ -15,14 +15,15 @@
     "plugins/*"
   ],
   "scripts": {
-    "dev": "bun run --filter @overly/server --filter @overly/dashboard dev",
+    "dev": "bun run --parallel --filter @overly/server --filter @overly/dashboard --filter @overly/sdk dev",
     "dev:desktop": "bun run build && cargo run --manifest-path apps/desktop/src-tauri/Cargo.toml",
-    "build": "bun run --filter @overly/dashboard build && bun run --filter @overly/server build",
+    "build": "bun run --filter @overly/dashboard build && bun run --filter @overly/sdk build && bun run --filter @overly/server build",
     "lint": "eslint . --max-warnings 0 && prettier --check .",
     "format": "prettier --write .",
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
+    "generate:schemas": "bun packages/shared/scripts/generate-schemas.js",
     "check:desktop": "cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml",
     "test:sidecar": "OVERLY_SIDECAR_ENTRY=apps/server/dist/sidecar/server.mjs vitest run --project @overly/server main.process"
   },

@@ -1,0 +1,60 @@
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+#banner {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 5vh 5vw;
+}
+
+#banner[data-position='top'] {
+  align-items: flex-start;
+}
+
+#banner[data-position='center'] {
+  align-items: center;
+}
+
+.banner-box {
+  max-width: 100%;
+  padding: 0.4em 1em;
+  border-radius: 0.4em;
+  background: var(--banner-bg, #000000b3);
+  color: var(--banner-color, #ffffff);
+  font-family: var(--banner-font, system-ui, sans-serif);
+  font-size: var(--banner-size, 48px);
+  line-height: 1.3;
+  text-align: center;
+  overflow-wrap: anywhere;
+  opacity: 0;
+  transition:
+    opacity 400ms ease,
+    transform 400ms ease;
+}
+
+#banner[data-animation='slide'] .banner-box {
+  transform: translateY(1.5em);
+}
+
+#banner[data-animation='slide'][data-position='top'] .banner-box {
+  transform: translateY(-1.5em);
+}
+
+#banner.visible .banner-box {
+  opacity: 1;
+  transform: none;
+}
+
+#banner[data-animation='none'] .banner-box {
+  transition: none;
+}

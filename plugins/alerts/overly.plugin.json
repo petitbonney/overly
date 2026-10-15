@@ -1,0 +1,137 @@
+{
+  "$schema": "../../docs/plugins/overly.plugin.schema.json",
+  "id": "overly.alerts",
+  "name": "Alerts",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "description": "Image, sound and text alerts, played one after another.",
+  "author": "Overly",
+  "icon": "icons/alerts.svg",
+  "backend": "src/backend.ts",
+  "widgets": [
+    {
+      "type": "alerts",
+      "name": "Alerts",
+      "description": "Shows an image, plays a sound and displays a message. Alerts never overlap.",
+      "settings": {
+        "type": "object",
+        "properties": {
+          "image": {
+            "type": "string",
+            "title": "Image",
+            "default": "",
+            "x-overly": { "widget": "asset", "accept": ["image"] }
+          },
+          "sound": {
+            "type": "string",
+            "title": "Sound",
+            "default": "",
+            "x-overly": { "widget": "asset", "accept": ["audio"] }
+          },
+          "volume": {
+            "type": "integer",
+            "title": "Volume",
+            "minimum": 0,
+            "maximum": 100,
+            "default": 80,
+            "x-overly": { "widget": "slider", "unit": "%" }
+          },
+          "durationSeconds": {
+            "type": "number",
+            "title": "Duration",
+            "description": "How long each alert stays on screen. A longer sound stops with it.",
+            "minimum": 1,
+            "maximum": 60,
+            "default": 6,
+            "x-overly": { "unit": "s" }
+          },
+          "textTemplate": {
+            "type": "string",
+            "title": "Text template",
+            "description": "Headline. Use {{title}}, {{message}} and {{variant}}.",
+            "default": "{{title}}",
+            "maxLength": 500
+          },
+          "fontFamily": {
+            "type": "string",
+            "title": "Font",
+            "description": "A font installed on this computer, or a CSS font list.",
+            "default": "system-ui, sans-serif",
+            "maxLength": 200
+          },
+          "fontSize": {
+            "type": "integer",
+            "title": "Font size",
+            "minimum": 12,
+            "maximum": 200,
+            "default": 48,
+            "x-overly": { "unit": "px" }
+          },
+          "textColor": {
+            "type": "string",
+            "title": "Text color",
+            "default": "#ffffff",
+            "x-overly": { "widget": "color" }
+          },
+          "layout": {
+            "type": "string",
+            "title": "Layout",
+            "enum": ["image-above", "image-left"],
+            "default": "image-above",
+            "x-overly": { "enumLabels": ["Image above the text", "Image left of the text"] }
+          }
+        }
+      },
+      "overlay": { "entry": "overlay/index.html", "width": 1920, "height": 1080 },
+      "actions": [
+        {
+          "name": "show-alert",
+          "title": "Show alert",
+          "description": "Shows an alert after the ones already waiting.",
+          "params": {
+            "type": "object",
+            "properties": {
+              "title": { "type": "string", "title": "Title", "minLength": 1, "maxLength": 200 },
+              "message": { "type": "string", "title": "Message", "default": "", "maxLength": 500 },
+              "variant": {
+                "type": "string",
+                "title": "Variant",
+                "default": "default",
+                "maxLength": 64
+              }
+            },
+            "required": ["title"]
+          },
+          "sample": {
+            "title": "Ada just followed!",
+            "message": "Thanks for the follow!",
+            "variant": "follow"
+          },
+          "queued": true,
+          "timeoutMs": 90000
+        }
+      ],
+      "events": [
+        {
+          "name": "alert.finished",
+          "title": "Alert finished",
+          "description": "An overlay finished playing an alert.",
+          "payload": {
+            "type": "object",
+            "properties": {
+              "title": { "type": "string" },
+              "message": { "type": "string" },
+              "variant": { "type": "string" }
+            },
+            "required": ["title", "message", "variant"]
+          },
+          "sample": {
+            "title": "Ada just followed!",
+            "message": "Thanks for the follow!",
+            "variant": "follow"
+          }
+        }
+      ]
+    }
+  ]
+}

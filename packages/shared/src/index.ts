@@ -1,9 +1,14 @@
 export const PRODUCT_NAME = 'Overly';
 
 export * from './api.js';
+export * from './assets.js';
+export * from './backend-protocol.js';
+export * from './backoff.js';
 export * from './ids.js';
 export * from './json.js';
+export * from './limits.js';
 export * from './messages.js';
+export * from './overlay-protocol.js';
 export * from './plugin/json-schema.js';
 export * from './plugin/manifest.js';
 export * from './schema/subset.js';
@@ -12,3 +17,4 @@ export * from './settings.js';
 export * from './sidecar.js';
 export { TWITCH_CLIENT_ID } from './twitch.js';
 export * from './version.js';
+export * from './widget.js';

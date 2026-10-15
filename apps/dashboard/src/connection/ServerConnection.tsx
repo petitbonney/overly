@@ -1,7 +1,5 @@
-import { ServerMessageSchema } from '@overly/shared';
+import { reconnectDelay, ServerMessageSchema } from '@overly/shared';
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
-
-import { reconnectDelay } from './backoff.js';
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting';
 

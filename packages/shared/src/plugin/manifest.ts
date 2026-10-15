@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { KEBAB_NAME_PATTERN, PLUGIN_ID_PATTERN, PluginIdSchema, SemverSchema } from '../ids.js';
+import { ACTION_TIMEOUT_MS, DEFAULT_QUEUE_MAX_LENGTH } from '../limits.js';
 import { checkSchemaRules, type ObjectField, ObjectFieldSchema } from '../schema/subset.js';
 import { formatIssues, schemaToZod, settingsDefaults } from '../schema/to-zod.js';
 
@@ -75,7 +76,11 @@ export const ActionDeclSchema = z.strictObject({
   output: ObjectFieldSchema.optional(),
   sample: SampleSchema,
   queued: z.boolean().default(false),
-  timeoutMs: z.int().min(100).max(600_000).default(30_000),
+  timeoutMs: z
+    .int()
+    .min(ACTION_TIMEOUT_MS.min)
+    .max(ACTION_TIMEOUT_MS.max)
+    .default(ACTION_TIMEOUT_MS.default),
 });
 
 export const EventDeclSchema = z.strictObject({
@@ -94,8 +99,8 @@ export const WidgetTypeDeclSchema = z.strictObject({
   settings: RootSchema,
   overlay: OverlayDeclSchema.optional(),
   queue: z
-    .strictObject({ maxLength: z.int().min(1).max(1000).default(100) })
-    .default(() => ({ maxLength: 100 })),
+    .strictObject({ maxLength: z.int().min(1).max(1000).default(DEFAULT_QUEUE_MAX_LENGTH) })
+    .default(() => ({ maxLength: DEFAULT_QUEUE_MAX_LENGTH })),
   actions: z.array(ActionDeclSchema).default(() => []),
   events: z.array(EventDeclSchema).default(() => []),
 });

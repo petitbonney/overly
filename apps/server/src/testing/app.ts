@@ -50,6 +50,8 @@ export async function buildTestApp(
     widgets: services.service,
     registry: services.registry,
     assets: services.assets,
+    overlays: services.overlays,
+    overlaySdkPath: undefined,
     ...overrides,
   };
   const { app, hub } = await buildApp(deps);

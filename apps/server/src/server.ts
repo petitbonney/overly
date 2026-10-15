@@ -29,6 +29,8 @@ export interface ServerOptions {
   dashboardDir: string | undefined;
   /** Folder of the built-in plugins. */
   pluginsDir: string;
+  /** The built overlay SDK, served at /sdk/overlay.js. */
+  overlaySdkPath?: string | undefined;
   prettyLogs: boolean;
 }
 
@@ -116,6 +118,8 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
     widgets,
     registry,
     assets,
+    overlays,
+    overlaySdkPath: options.overlaySdkPath,
   });
   ref.hub = hub;
 

@@ -328,9 +328,13 @@ export class WidgetService implements BackendDelegate {
     }
 
     let settings: Record<string, unknown> | undefined;
+    let pluginVersion: string | undefined;
     if (body.settings !== undefined) {
       const type = this.typeOf(id);
       if (type === undefined) throw new WidgetServiceError(409, 'widget_broken');
+      // Settings that pass the installed version's schema belong to that version: recording it
+      // keeps the next start from migrating them again.
+      pluginVersion = type.manifest.version;
       const result = type.settings.safeParse(body.settings);
       if (!result.success) {
         throw new WidgetServiceError(
@@ -349,6 +353,7 @@ export class WidgetService implements BackendDelegate {
       ...(body.name === undefined ? {} : { name: body.name }),
       ...(body.enabled === undefined ? {} : { enabled: body.enabled }),
       ...(settings === undefined ? {} : { settings }),
+      ...(pluginVersion === undefined ? {} : { pluginVersion }),
     }));
     if (settings !== undefined) {
       this.#problems.set(id, []);

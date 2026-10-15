@@ -219,6 +219,33 @@ describe('WidgetService', () => {
     expect(saved).toMatchObject({ pluginVersion: '1.1.0', settings: { label: 'Old', step: 2 } });
   });
 
+  it('saving fixed settings after a failed migration records the installed version', async () => {
+    const { service, dataDir } = await createTestServices({
+      manifest: fixtureManifest({ backend: 'src/backend.js', version: '1.1.0' }),
+      builtins: {
+        'fixture.widgets': definePluginBackend({
+          widgets: {
+            counter: defineWidgetBackend({
+              migrateSettings: ({ title, ...rest }) => ({ ...rest, label: title }),
+            }),
+          },
+        }),
+      },
+      widgetFiles: widgetFile(counterDoc({ settings: { title: 'Old', step: 99 } })),
+    });
+    expect(service.detail(W).problems[0]?.code).toBe('settings_invalid');
+    const saved = await service.update(W, { settings: { label: 'Fixed by user', step: 2 } });
+    expect(saved).toMatchObject({ status: 'ok', problems: [] });
+    const file = JSON.parse(
+      await readFile(join(dataDir, 'widgets', `${W}.json`), 'utf8'),
+    ) as unknown;
+    // Otherwise the next start would migrate the user's fixed settings again.
+    expect(file).toMatchObject({
+      pluginVersion: '1.1.0',
+      settings: { label: 'Fixed by user', step: 2 },
+    });
+  });
+
   it('leaves widgets from a newer plugin version broken and untouched', async () => {
     const { service, dataDir } = await createTestServices({
       widgetFiles: widgetFile(counterDoc({ pluginVersion: '2.0.0' })),

@@ -10,6 +10,7 @@ import { HomePage } from './pages/HomePage.js';
 import { NotFoundPage } from './pages/NotFoundPage.js';
 import { SessionGate } from './session/SessionGate.js';
 import { theme } from './theme.js';
+import { WidgetPageRoute } from './widgets/WidgetPage.js';
 
 // The light/dark choice is a per-browser preference, so local storage is the right place for it.
 const colorSchemeManager = localStorageColorSchemeManager({ key: 'overly-color-scheme' });
@@ -33,6 +34,7 @@ export function AppRoutes() {
     <Routes>
       <Route element={<AppLayout />}>
         <Route index element={<HomePage />} />
+        <Route path="widgets/:widgetId" element={<WidgetPageRoute />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

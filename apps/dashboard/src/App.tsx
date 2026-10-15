@@ -1,4 +1,5 @@
 import { localStorageColorSchemeManager, MantineProvider } from '@mantine/core';
+import { Notifications } from '@mantine/notifications';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type ReactNode, useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router';
@@ -21,6 +22,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       defaultColorScheme="auto"
       colorSchemeManager={colorSchemeManager}
     >
+      <Notifications position="bottom-right" />
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </MantineProvider>
   );

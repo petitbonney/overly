@@ -187,6 +187,78 @@ describe('BackendHost', () => {
     expect(request.timeoutMs).toBeLessThanOrEqual(1000);
   });
 
+  it('accepts the result of an action whose widget stopped meanwhile', async () => {
+    let finish: (value: unknown) => void = () => undefined;
+    const { backends } = await host({
+      builtins: counterBackend({
+        bump: () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          }),
+      }),
+    });
+    startCounter(backends);
+    const connection = backends.connection('fixture.widgets');
+    const result = connection?.runAction(W, {
+      actionId: 'a1',
+      name: 'bump',
+      params: { by: 1 },
+      timeoutMs: 1000,
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+    connection?.stopWidget(W);
+    finish({ done: true });
+    await expect(result).resolves.toEqual({ done: true });
+  });
+
+  it('lets running actions finish during the close grace', async () => {
+    const { backends } = await host({
+      builtins: counterBackend({
+        bump: () =>
+          new Promise((resolve) => {
+            setTimeout(() => {
+              resolve('finished');
+            }, 50);
+          }),
+      }),
+    });
+    startCounter(backends);
+    const connection = backends.connection('fixture.widgets');
+    const result = connection?.runAction(W, {
+      actionId: 'a1',
+      name: 'bump',
+      params: { by: 1 },
+      timeoutMs: 5000,
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+    await connection?.close(1000);
+    await expect(result).resolves.toBe('finished');
+  });
+
+  it('answers an overlay request for a widget it does not run', async () => {
+    let backendEnd: ChannelEnd | undefined;
+    const received: unknown[] = [];
+    await host({
+      run: (channel) => {
+        backendEnd = channel;
+        channel.onMessage((message) => received.push(message));
+        channel.send({ type: 'ready', widgets: { counter: { actions: [], migrates: false } } });
+        return { close: () => undefined };
+      },
+    });
+    backendEnd?.send({
+      type: 'overlayAction',
+      widgetId: 'zzzzzzzzzz99',
+      requestId: 'r1',
+      name: 'flash',
+      params: {},
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(received).toContainEqual(
+      expect.objectContaining({ type: 'overlayActionResult', requestId: 'r1', ok: false }),
+    );
+  });
+
   it('migrates settings through the backend', async () => {
     const { backends } = await host({ builtins: counterBackend() });
     await expect(

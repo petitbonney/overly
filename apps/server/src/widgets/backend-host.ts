@@ -52,6 +52,7 @@ interface Pending<T> {
 }
 
 interface Call extends Pending<unknown> {
+  widgetId: string;
   actionId: string;
   deadline: number;
 }
@@ -248,6 +249,7 @@ export class PluginBackendConnection {
           this.#calls.delete(callId);
           pending.reject(error);
         },
+        widgetId,
         actionId: call.actionId,
         deadline: Date.now() + call.timeoutMs,
       });
@@ -329,16 +331,48 @@ export class PluginBackendConnection {
       return;
     }
     const message = parsed.data;
-    if ('widgetId' in message && message.widgetId !== undefined && message.type !== 'log') {
-      if (!this.#started.has(message.widgetId)) {
-        this.#logger.warn(
-          { pluginId: this.pluginId, widgetId: message.widgetId, type: message.type },
-          'Ignored a backend message for a widget it does not run',
-        );
-        return;
+    if (!this.#accepts(message)) {
+      this.#logger.warn(
+        { pluginId: this.pluginId, type: message.type },
+        'Ignored a backend message for a widget it does not run',
+      );
+      if (message.type === 'overlayAction') {
+        // Answer anyway, so the backend's runOverlayAction doesn't wait forever.
+        this.#send({
+          type: 'overlayActionResult',
+          widgetId: message.widgetId,
+          requestId: message.requestId,
+          ok: false,
+          error: 'The widget is not running',
+        });
       }
+      return;
     }
     this.#handle(message);
+  }
+
+  /**
+   * Messages about a widget are accepted while it runs. The result of an action that was already
+   * running (and its overlay requests) is accepted even after the widget stopped: disabling a
+   * widget or shutting down lets running actions finish.
+   */
+  #accepts(message: BackendToHostMessage): boolean {
+    switch (message.type) {
+      case 'ready':
+      case 'log':
+      case 'migrateResult':
+        return true;
+      case 'actionResult':
+        return this.#calls.get(message.callId)?.widgetId === message.widgetId;
+      case 'overlayAction':
+        return (
+          this.#started.has(message.widgetId) ||
+          (message.callId !== undefined &&
+            this.#calls.get(message.callId)?.widgetId === message.widgetId)
+        );
+      default:
+        return this.#started.has(message.widgetId);
+    }
   }
 
   #handle(message: BackendToHostMessage): void {

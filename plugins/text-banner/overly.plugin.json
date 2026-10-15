@@ -1,0 +1,81 @@
+{
+  "$schema": "../../docs/plugins/overly.plugin.schema.json",
+  "id": "overly.text-banner",
+  "name": "Text banner",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "description": "A line of text at the top, middle or bottom of the screen.",
+  "author": "Overly",
+  "icon": "icons/banner.svg",
+  "backend": "src/backend.ts",
+  "widgets": [
+    {
+      "type": "banner",
+      "name": "Text banner",
+      "description": "Shows a line of text until you hide it. It stays after an OBS refresh.",
+      "settings": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "string",
+            "title": "Position",
+            "enum": ["top", "center", "bottom"],
+            "default": "bottom",
+            "x-overly": { "enumLabels": ["Top", "Center", "Bottom"] }
+          },
+          "fontFamily": {
+            "type": "string",
+            "title": "Font",
+            "description": "A font installed on this computer, or a CSS font list.",
+            "default": "system-ui, sans-serif",
+            "maxLength": 200
+          },
+          "fontSize": {
+            "type": "integer",
+            "title": "Font size",
+            "minimum": 12,
+            "maximum": 200,
+            "default": 48,
+            "x-overly": { "unit": "px" }
+          },
+          "textColor": {
+            "type": "string",
+            "title": "Text color",
+            "default": "#ffffff",
+            "x-overly": { "widget": "color" }
+          },
+          "backgroundColor": {
+            "type": "string",
+            "title": "Background color",
+            "default": "#000000b3",
+            "x-overly": { "widget": "color" }
+          },
+          "animation": {
+            "type": "string",
+            "title": "Animation",
+            "enum": ["slide", "fade", "none"],
+            "default": "slide",
+            "x-overly": { "enumLabels": ["Slide", "Fade", "None"] }
+          }
+        }
+      },
+      "overlay": { "entry": "overlay/index.html", "width": 1920, "height": 1080 },
+      "actions": [
+        {
+          "name": "show",
+          "title": "Show",
+          "description": "Shows the banner with this text.",
+          "params": {
+            "type": "object",
+            "properties": {
+              "text": { "type": "string", "title": "Text", "minLength": 1, "maxLength": 500 }
+            },
+            "required": ["text"]
+          },
+          "sample": { "text": "Welcome to the stream!" }
+        },
+        { "name": "hide", "title": "Hide", "description": "Hides the banner." }
+      ]
+    }
+  ]
+}

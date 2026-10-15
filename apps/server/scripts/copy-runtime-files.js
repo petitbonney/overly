@@ -50,7 +50,10 @@ for (const entry of await readdir(pluginsDir, { withFileTypes: true })) {
   const parsed = PluginManifestSchema.safeParse(JSON.parse(await readFile(manifestPath, 'utf8')));
   if (!parsed.success) continue;
   const { dirs, files } = publicPaths(parsed.data);
-  for (const path of [...dirs, ...files]) {
+  // The backend entry is never run from here (built-in backends are bundled into server.mjs),
+  // but it keeps the copied folder a valid plugin: the loader checks that it exists.
+  const backend = parsed.data.backend === undefined ? [] : [parsed.data.backend];
+  for (const path of [...dirs, ...files, ...backend]) {
     if (await exists(join(source, path))) {
       await cp(join(source, path), join(destination, path), { recursive: true });
     }

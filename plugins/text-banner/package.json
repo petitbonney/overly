@@ -1,0 +1,17 @@
+{
+  "name": "@overly/plugin-text-banner",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Built-in Overly plugin: a text banner widget.",
+  "license": "MIT",
+  "exports": {
+    "./backend": "./src/backend.ts"
+  },
+  "dependencies": {
+    "@overly/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "jsdom": "30.1.2"
+  }
+}

@@ -1,11 +1,14 @@
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import pino from 'pino';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { fixtureManifest, writeTestPlugin } from '../testing/plugins.js';
+import { BackendHost } from '../widgets/backend-host.js';
+import { BUILTIN_BACKENDS } from './builtin.js';
 import { PluginRegistry } from './registry.js';
 
 const logger = pino({ level: 'silent' });
@@ -111,5 +114,30 @@ describe('PluginRegistry', () => {
     );
     expect(await registry.publicFile('fixture.widgets', 'icons/icon.svg')).toBeDefined();
     expect(await registry.publicFile('missing.plugin', 'overlay/index.html')).toBeUndefined();
+  });
+});
+
+describe('built-in plugins', () => {
+  it('loads the built-in plugins without errors', async () => {
+    const registry = await PluginRegistry.load({
+      pluginsDir: fileURLToPath(new URL('../../../../plugins/', import.meta.url)),
+      logger,
+    });
+    const backends = await BackendHost.start({
+      registry,
+      builtins: BUILTIN_BACKENDS,
+      delegate: {
+        setState: () => undefined,
+        emitToOverlay: () => undefined,
+        overlayAction: () => Promise.resolve({ delivered: false }),
+        emitEvent: () => undefined,
+      },
+      logger,
+    });
+    expect(registry.plugins().map((plugin) => plugin.id)).toContain('overly.text-banner');
+    for (const plugin of registry.plugins()) {
+      expect(plugin, plugin.folder).toMatchObject({ status: 'ok', errors: [] });
+    }
+    await backends.close();
   });
 });

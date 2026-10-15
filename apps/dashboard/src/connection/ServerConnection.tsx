@@ -105,12 +105,16 @@ export function ServerConnectionProvider({
     let timer: ReturnType<typeof setTimeout> | undefined;
     let attempt = 0;
     let stopped = false;
+    let connectedBefore = false;
 
     const connect = (): void => {
       socket = createSocket(target);
       socket.onopen = () => {
         attempt = 0;
         setStatus('connected');
+        // Updates broadcast while the socket was down (a server restart) were missed.
+        if (connectedBefore) void client.invalidateQueries();
+        connectedBefore = true;
       };
       socket.onmessage = (event) => {
         const message = parseMessage(event);

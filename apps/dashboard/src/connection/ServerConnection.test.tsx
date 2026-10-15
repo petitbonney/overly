@@ -117,6 +117,23 @@ describe('ServerConnectionProvider', () => {
   });
 });
 
+describe('reconnecting', () => {
+  it('refreshes every query after reconnecting, not on the first connection', () => {
+    vi.useFakeTimers();
+    renderConnection('ws://test/ws');
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    FakeSocket.instances[0]?.open();
+    expect(invalidate).not.toHaveBeenCalled();
+    FakeSocket.instances[0]?.drop();
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    FakeSocket.instances[1]?.open();
+    // Messages sent while disconnected (runtime counts, widget changes) were missed.
+    expect(invalidate).toHaveBeenCalledWith();
+  });
+});
+
 describe('server messages', () => {
   const W = 'abcdefghij12';
 

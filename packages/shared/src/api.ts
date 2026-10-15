@@ -27,6 +27,7 @@ export type ApiErrorCode =
   | 'forbidden_origin'
   | 'no_session'
   | 'not_found'
+  | 'internal_error'
   | 'invalid_body'
   | 'widget_not_found'
   | 'widget_type_not_found'

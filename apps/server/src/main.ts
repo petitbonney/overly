@@ -66,6 +66,11 @@ async function main(argv: readonly string[]): Promise<number> {
       ? fileURLToPath(new URL('./dashboard/', import.meta.url))
       : resolve(options.dashboardDir);
 
+  const pluginsDir =
+    options.pluginsDir === undefined
+      ? fileURLToPath(new URL('./plugins/', import.meta.url))
+      : resolve(options.pluginsDir);
+
   let server: RunningServer;
   try {
     server = await startServer({
@@ -73,6 +78,7 @@ async function main(argv: readonly string[]): Promise<number> {
       port: options.port,
       devOrigins: options.devOrigins,
       dashboardDir,
+      pluginsDir,
       prettyLogs: options.prettyLogs,
     });
   } catch (error) {

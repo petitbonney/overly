@@ -5,6 +5,8 @@ import type { WebSocket } from 'ws';
 
 export interface WsHub {
   readonly size: number;
+  /** Sends a message to every connected dashboard. */
+  broadcast(message: ServerMessage): void;
   closeAll(code: number, reason: string): void;
 }
 
@@ -56,6 +58,12 @@ export function registerWebSocket(
   return {
     get size() {
       return clients.size;
+    },
+    broadcast(message) {
+      const data = JSON.stringify(message);
+      for (const socket of clients) {
+        if (socket.readyState === socket.OPEN) socket.send(data);
+      }
     },
     closeAll(code, reason) {
       for (const socket of clients) socket.close(code, reason);

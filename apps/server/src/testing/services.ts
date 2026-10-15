@@ -57,6 +57,9 @@ export async function createTestServices(
     extraPlugins?: Record<string, unknown>;
     widgetFiles?: Record<string, string>;
     now?: () => Date;
+    /** Also receives every dashboard message (the recorded `messages` always do). */
+    notify?: (message: ServerMessage) => void;
+    overlayBaseUrl?: () => string;
   } = {},
 ): Promise<TestServices> {
   const logger = pino({ level: 'silent' });
@@ -95,8 +98,11 @@ export async function createTestServices(
     overlays,
     events,
     builtins: options.builtins ?? {},
-    notify: (message) => messages.push(message),
-    overlayBaseUrl: () => TEST_OVERLAY_BASE_URL,
+    notify: (message) => {
+      messages.push(message);
+      options.notify?.(message);
+    },
+    overlayBaseUrl: options.overlayBaseUrl ?? (() => TEST_OVERLAY_BASE_URL),
     logger,
     now,
   });

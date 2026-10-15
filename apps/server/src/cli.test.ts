@@ -10,6 +10,7 @@ describe('parseCliArgs', () => {
       port: undefined,
       devOrigins: [],
       dashboardDir: undefined,
+      pluginsDir: undefined,
       prettyLogs: false,
     });
   });
@@ -28,6 +29,8 @@ describe('parseCliArgs', () => {
         'http://b',
         '--dashboard-dir',
         'd',
+        '--plugins-dir',
+        'p',
         '--pretty-logs',
       ]),
     ).toEqual({
@@ -36,6 +39,7 @@ describe('parseCliArgs', () => {
       port: 0,
       devOrigins: ['http://a', 'http://b'],
       dashboardDir: 'd',
+      pluginsDir: 'p',
       prettyLogs: true,
     });
   });

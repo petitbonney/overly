@@ -37,6 +37,9 @@ const CLOSE_NOT_FOUND = 4404;
 
 /** An error with the HTTP status and API error code the routes answer with. */
 export class WidgetServiceError extends Error {
+  /** The message for API answers, when there is more to say than the code. */
+  readonly detail: string | undefined;
+
   constructor(
     readonly status: number,
     readonly code: ApiErrorCode,
@@ -45,6 +48,7 @@ export class WidgetServiceError extends Error {
   ) {
     super(message ?? code);
     this.name = 'WidgetServiceError';
+    this.detail = message;
   }
 }
 

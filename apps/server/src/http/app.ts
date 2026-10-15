@@ -2,12 +2,15 @@ import fastifyCookie from '@fastify/cookie';
 import Fastify, { type FastifyBaseLogger, type FastifyInstance } from 'fastify';
 import type pino from 'pino';
 
+import type { PluginRegistry } from '../plugins/registry.js';
 import { createAllowlist } from '../security/allowlist.js';
 import { registerGuard } from '../security/guard.js';
 import type { OneTimeTokens } from '../security/tokens.js';
+import type { WidgetService } from '../widgets/service.js';
 import { registerWebSocket, registerWebSocketPlugin, type WsHub } from '../ws/hub.js';
 import { registerDashboard } from './dashboard.js';
 import { registerApiRoutes, registerSessionExchange } from './routes.js';
+import { registerWidgetRoutes } from './widget-routes.js';
 
 export interface AppDeps {
   logger: pino.Logger;
@@ -19,6 +22,8 @@ export interface AppDeps {
   sessionKey: Buffer;
   tokens: OneTimeTokens;
   dashboardDir: string | undefined;
+  widgets: WidgetService;
+  registry: PluginRegistry;
   now?: () => number;
   /** WebSocket ping interval, shortened by tests. */
   wsPingIntervalMs?: number;
@@ -40,6 +45,7 @@ export async function buildApp(deps: AppDeps): Promise<BuiltApp> {
   registerGuard(app, { allowlist: createAllowlist(deps.getPort, deps.devOrigins), now });
   registerSessionExchange(app, { tokens: deps.tokens, now });
   registerApiRoutes(app, { version: deps.version });
+  await registerWidgetRoutes(app, { widgets: deps.widgets, registry: deps.registry });
   const hub = registerWebSocket(app, {
     version: deps.version,
     ...(deps.wsPingIntervalMs === undefined ? {} : { pingIntervalMs: deps.wsPingIntervalMs }),

@@ -88,11 +88,11 @@ export class ActionQueue {
   #next(): void {
     const entry = this.#waiting.shift();
     this.#current = entry;
-    this.#emit();
-    if (entry === undefined) return;
-    void entry.start().finally(() => {
+    // Start first, then report: the item's own "started" signals come before the snapshot.
+    void entry?.start().finally(() => {
       this.#next();
     });
+    this.#emit();
   }
 
   #emit(): void {

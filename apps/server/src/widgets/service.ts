@@ -1,11 +1,15 @@
 import type { PluginBackendDefinition } from '@overly/sdk/backend';
 import {
+  type ActionStatus,
+  type ActionWarning,
   type ApiErrorCode,
   type CreateWidgetBody,
   formatIssues,
   type Issue,
   type JsonValue,
   parseWidgetTypeRef,
+  type RunActionBody,
+  type RunActionResponse,
   type ServerMessage,
   type UpdateWidgetBody,
   WIDGET_SCHEMA_VERSION,
@@ -21,8 +25,10 @@ import semver from 'semver';
 import type { EventBus } from '../events/bus.js';
 import type { PluginRegistry, WidgetTypeDef } from '../plugins/registry.js';
 import { randomId } from '../util/random-id.js';
+import { executeAction } from './action-runner.js';
 import { type BackendDelegate, BackendHost } from './backend-host.js';
 import type { OverlayConnection, OverlayHub, OverlayOutcome } from './overlay-hub.js';
+import { ActionQueue, QueueFullError } from './queue.js';
 import type { StoredWidget, WidgetStore } from './store.js';
 
 export const OVERLAY_CLOSE_DELETED_REASON = 'widget deleted';
@@ -79,6 +85,9 @@ export class WidgetService implements BackendDelegate {
   readonly #problems = new Map<string, WidgetProblem[]>();
   /** Validated settings (defaults filled in) of widgets whose settings pass their schema. */
   readonly #settings = new Map<string, Record<string, unknown>>();
+  readonly #queues = new Map<string, ActionQueue>();
+  /** Warnings of actions in flight, by action ID. */
+  readonly #warnings = new Map<string, Set<ActionWarning>>();
   #backends: BackendHost | undefined;
 
   private constructor(options: WidgetServiceOptions) {
@@ -151,10 +160,122 @@ export class WidgetService implements BackendDelegate {
   }
 
   runtime(id: string): WidgetRuntime {
+    const queue = this.#queues.get(id);
     return {
       overlays: this.#overlays.counts(id),
-      queue: { pending: 0, running: null },
+      queue: { pending: queue?.pending ?? 0, running: queue?.running ?? null },
     };
+  }
+
+  /**
+   * Validates and starts an action. Queued actions wait their turn in the widget's queue; the
+   * others start at once. Answers right away; progress goes out as `widget.action` messages.
+   */
+  runAction(id: string, action: string, body: RunActionBody): Promise<RunActionResponse> {
+    // The executor turns validation errors thrown by #startAction into rejections.
+    return new Promise((resolve) => {
+      resolve(this.#startAction(id, action, body));
+    });
+  }
+
+  #startAction(id: string, action: string, body: RunActionBody): RunActionResponse {
+    const entry = this.#require(id);
+    const [problem] = this.#problems.get(id) ?? [];
+    if (entry.kind !== 'document' || problem !== undefined) {
+      throw new WidgetServiceError(409, 'widget_broken', problem?.message);
+    }
+    if (!entry.doc.enabled) throw new WidgetServiceError(409, 'widget_disabled');
+    const type = this.typeOf(id);
+    const compiled = type?.actions.get(action);
+    if (type === undefined || compiled === undefined) {
+      throw new WidgetServiceError(404, 'action_not_found', `No action "${action}"`);
+    }
+    const parsed = compiled.params.safeParse(body.params);
+    if (!parsed.success) {
+      throw new WidgetServiceError(
+        400,
+        'invalid_params',
+        'Invalid action parameters',
+        formatIssues(parsed.error),
+      );
+    }
+
+    const actionId = randomId();
+    const status = (
+      next: ActionStatus,
+      extra: { warnings?: ActionWarning[]; error?: string } = {},
+    ) => {
+      this.#notify({
+        type: 'widget.action',
+        widgetId: id,
+        actionId,
+        action,
+        status: next,
+        warnings: extra.warnings ?? [],
+        ...(extra.error === undefined ? {} : { error: extra.error }),
+      });
+    };
+    const run = async (): Promise<ActionWarning[]> => {
+      status('running');
+      const warnings = new Set<ActionWarning>();
+      this.#warnings.set(actionId, warnings);
+      try {
+        await executeAction({
+          typeDef: type,
+          widgetId: id,
+          action: compiled,
+          params: parsed.data,
+          actionId,
+          connection: this.#connection(id),
+          overlays: this.#overlays,
+          warn: (warning) => warnings.add(warning),
+        });
+        return [...warnings];
+      } finally {
+        this.#warnings.delete(actionId);
+      }
+    };
+    const fail = (error: unknown): void => {
+      const message = error instanceof Error ? error.message : String(error);
+      this.#logger.warn({ widgetId: id, action, actionId, error: message }, 'Widget action failed');
+      status('failed', { error: message });
+    };
+
+    if (!compiled.decl.queued) {
+      run().then((warnings) => {
+        status('done', { warnings });
+      }, fail);
+      return { actionId, status: 'running' };
+    }
+
+    const queue = this.#queue(id, type);
+    // Set by the queue when it starts the item right away (an object: TS can't see the callback run).
+    const progress = { started: false };
+    let outcome;
+    try {
+      // Checked before announcing `queued`, so a refused action sends nothing.
+      if (queue.pending >= type.decl.queue.maxLength) throw new QueueFullError(queue.pending);
+      status('queued');
+      outcome = queue.push({
+        name: action,
+        priority: body.priority,
+        run: () => {
+          progress.started = true;
+          return run();
+        },
+      });
+    } catch (error) {
+      if (error instanceof QueueFullError) {
+        throw new WidgetServiceError(429, 'queue_full', 'Too many actions are waiting');
+      }
+      throw error;
+    }
+    void outcome.then((result) => {
+      if (result.status === 'completed') status('done', { warnings: result.value });
+      else if (result.status === 'failed') fail(result.error);
+      else status('cancelled');
+    });
+    return { actionId, status: progress.started ? 'running' : 'queued' };
   }
 
   /** Called when overlay counts or the queue change: tells dashboards. */
@@ -230,7 +351,10 @@ export class WidgetService implements BackendDelegate {
       this.#settings.set(id, settings);
     }
     const isActive = this.isActive(id);
-    if (wasActive && !isActive) this.#stopBackend(id);
+    if (wasActive && !isActive) {
+      this.#queues.get(id)?.cancelAll();
+      this.#stopBackend(id);
+    }
     if (settings !== undefined) {
       this.#overlays.send(id, { type: 'settings', settings });
       if (wasActive && isActive) this.#connection(id)?.updateSettings(id, settings);
@@ -263,6 +387,8 @@ export class WidgetService implements BackendDelegate {
 
   async delete(id: string): Promise<void> {
     this.#require(id);
+    this.#queues.get(id)?.cancelAll();
+    this.#queues.delete(id);
     this.#stopBackend(id);
     this.#overlays.closeWidget(id, CLOSE_NOT_FOUND, OVERLAY_CLOSE_DELETED_REASON);
     await this.#store.delete(id);
@@ -291,7 +417,9 @@ export class WidgetService implements BackendDelegate {
       this.#connection(doc.id)?.overlayConnected(doc.id, connection.id, connection.preview);
   }
 
+  /** Cancels waiting actions and stops the plugin backends. */
   async shutdown(): Promise<void> {
+    for (const queue of this.#queues.values()) queue.cancelAll();
     await this.#backends?.close();
   }
 
@@ -309,16 +437,25 @@ export class WidgetService implements BackendDelegate {
     this.#overlays.send(widgetId, { type: 'message', name, payload }, overlayId);
   }
 
-  overlayAction(
+  async overlayAction(
     widgetId: string,
-    request: { name: string; params: unknown; timeoutMs: number | undefined },
+    request: {
+      name: string;
+      params: unknown;
+      timeoutMs: number | undefined;
+      actionId: string | undefined;
+    },
   ): Promise<OverlayOutcome> {
-    return this.#overlays.runAction(
+    const outcome = await this.#overlays.runAction(
       widgetId,
       request.name,
       request.params,
       request.timeoutMs ?? DEFAULT_OVERLAY_TIMEOUT_MS,
     );
+    if (!outcome.delivered && request.actionId !== undefined) {
+      this.#warnings.get(request.actionId)?.add('no_overlay');
+    }
+    return outcome;
   }
 
   emitEvent(widgetId: string, name: string, payload: unknown): void {
@@ -489,6 +626,20 @@ export class WidgetService implements BackendDelegate {
       settings: this.#settings.get(id) ?? entry.doc.settings,
       state: entry.doc.state,
     });
+  }
+
+  #queue(id: string, type: WidgetTypeDef): ActionQueue {
+    let queue = this.#queues.get(id);
+    if (queue === undefined) {
+      queue = new ActionQueue({
+        maxLength: type.decl.queue.maxLength,
+        onChange: () => {
+          this.runtimeChanged(id);
+        },
+      });
+      this.#queues.set(id, queue);
+    }
+    return queue;
   }
 
   #stopBackend(id: string): void {

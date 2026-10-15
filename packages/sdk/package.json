@@ -6,7 +6,8 @@
   "description": "Overly SDK: overlay side and node/widget backend side.",
   "license": "MIT",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./backend": "./src/backend/index.ts"
   },
   "dependencies": {
     "@overly/shared": "workspace:*"

@@ -134,7 +134,9 @@ describe('built-in plugins', () => {
       },
       logger,
     });
-    expect(registry.plugins().map((plugin) => plugin.id)).toContain('overly.text-banner');
+    expect(registry.plugins().map((plugin) => plugin.id)).toEqual(
+      expect.arrayContaining(['overly.alerts', 'overly.text-banner']),
+    );
     for (const plugin of registry.plugins()) {
       expect(plugin, plugin.folder).toMatchObject({ status: 'ok', errors: [] });
     }

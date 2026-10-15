@@ -11,6 +11,9 @@
       "path": "packages/create-plugin"
     },
     {
+      "path": "plugins/alerts"
+    },
+    {
       "path": "plugins/text-banner"
     },
     {

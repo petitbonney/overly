@@ -54,6 +54,7 @@
         "@fastify/cookie": "11.1.3",
         "@fastify/static": "10.1.6",
         "@fastify/websocket": "11.3.4",
+        "@overly/plugin-alerts": "workspace:*",
         "@overly/plugin-text-banner": "workspace:*",
         "@overly/sdk": "workspace:*",
         "@overly/shared": "workspace:*",
@@ -90,6 +91,16 @@
       "version": "0.0.0",
       "dependencies": {
         "zod": "4.6.7",
+      },
+    },
+    "plugins/alerts": {
+      "name": "@overly/plugin-alerts",
+      "version": "1.0.0",
+      "dependencies": {
+        "@overly/sdk": "workspace:*",
+      },
+      "devDependencies": {
+        "jsdom": "30.1.2",
       },
     },
     "plugins/text-banner": {
@@ -301,6 +312,8 @@
     "@overly/dashboard": ["@overly/dashboard@workspace:apps/dashboard"],
 
     "@overly/desktop": ["@overly/desktop@workspace:apps/desktop"],
+
+    "@overly/plugin-alerts": ["@overly/plugin-alerts@workspace:plugins/alerts"],
 
     "@overly/plugin-text-banner": ["@overly/plugin-text-banner@workspace:plugins/text-banner"],
 

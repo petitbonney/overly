@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "allowJs": true,
+    "checkJs": true,
+    "types": ["@overly/sdk/overlay-global"]
+  },
+  "include": ["src", "overlay"],
+  "references": [{ "path": "../../packages/sdk" }]
+}

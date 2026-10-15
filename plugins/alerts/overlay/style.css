@@ -1,0 +1,58 @@
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+#alert {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  padding: 5vh 5vw;
+  box-sizing: border-box;
+  color: var(--alert-color, #ffffff);
+  font-family: var(--alert-font, system-ui, sans-serif);
+  font-size: var(--alert-size, 48px);
+  text-align: center;
+  text-shadow: 0 0.06em 0.2em rgb(0 0 0 / 70%);
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+
+#alert[data-layout='image-left'] {
+  flex-direction: row;
+  text-align: left;
+}
+
+#alert.visible {
+  opacity: 1;
+}
+
+.alert-image {
+  max-width: 40vw;
+  max-height: 50vh;
+  object-fit: contain;
+}
+
+.alert-headline {
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.alert-message {
+  font-size: 0.6em;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+[hidden] {
+  display: none !important;
+}

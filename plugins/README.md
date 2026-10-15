@@ -4,6 +4,7 @@ Built-in widgets and nodes live here, one folder per plugin, in the same format 
 
 | Folder | Plugin | Widget types |
 |---|---|---|
+| `alerts/` | `overly.alerts` | `alerts`: image, sound and text alerts, queued so they never overlap |
 | `text-banner/` | `overly.text-banner` | `banner`: a line of text, shown and hidden by actions |
 
 ## Layout of a plugin folder

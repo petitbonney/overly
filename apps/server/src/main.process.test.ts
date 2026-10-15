@@ -148,9 +148,9 @@ describe('sidecar process', () => {
       const plugins = await fetch(`${base}/api/plugins`, { headers: { cookie } });
       expect(plugins.status).toBe(200);
       const body = (await plugins.json()) as { plugins: { id: string; status: string }[] };
-      expect(body.plugins).toContainEqual(
-        expect.objectContaining({ id: 'overly.text-banner', status: 'ok' }),
-      );
+      for (const id of ['overly.alerts', 'overly.text-banner']) {
+        expect(body.plugins).toContainEqual(expect.objectContaining({ id, status: 'ok' }));
+      }
 
       sidecar.child.stdin.end();
       expect(await sidecar.exited).toBe(0);

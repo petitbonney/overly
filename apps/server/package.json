@@ -16,6 +16,7 @@
     "@fastify/cookie": "11.1.3",
     "@fastify/static": "10.1.6",
     "@fastify/websocket": "11.3.4",
+    "@overly/plugin-alerts": "workspace:*",
     "@overly/plugin-text-banner": "workspace:*",
     "@overly/sdk": "workspace:*",
     "@overly/shared": "workspace:*",
